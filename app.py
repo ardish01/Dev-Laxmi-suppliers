@@ -655,26 +655,14 @@ def api_admin_create_product():
     cur.close()
     conn.close()
 
-    # Rebuild recommendations immediately so new products are available live.
-    try:
-        from recommendation import fetch_products, train_and_save
-
-        reco_conn = get_db()
-        try:
-            df = fetch_products(reco_conn)
-            train_and_save(df)
-        finally:
-            reco_conn.close()
-
-        reload_reco_model()
-    except Exception as exc:
-        log.warning("Created product %d, but auto-training recommendations failed: %s", new_id, exc)
+    # Keep using the prebuilt recommendation pickle on live deploys.
+    reload_reco_model()
 
     log.info("Admin created new product #%d: '%s' (%s).", new_id, name, category)
     return jsonify({
         "success": True,
         "product_id": new_id,
-        "message": f"Product '{name}' created. AI recommendations updated.",
+        "message": f"Product '{name}' created.",
     }), 201
 
 
@@ -695,19 +683,8 @@ def api_admin_delete_product(product_id: int):
     cur.close()
     conn.close()
 
-    try:
-        from recommendation import fetch_products, train_and_save
-
-        reco_conn = get_db()
-        try:
-            df = fetch_products(reco_conn)
-            train_and_save(df)
-        finally:
-            reco_conn.close()
-
-        reload_reco_model()
-    except Exception as exc:
-        log.warning("Deleted product %d, but auto-training recommendations failed: %s", product_id, exc)
+    # Keep using the prebuilt recommendation pickle on live deploys.
+    reload_reco_model()
 
     return jsonify({"success": True, "message": "Product deleted."}), 200
 
