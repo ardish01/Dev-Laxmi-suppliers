@@ -1,5 +1,5 @@
 Flask
 gunicorn
 python-dotenv
-mysql-connector-python
+psycopg2-binary
 numpy==1.26.4
