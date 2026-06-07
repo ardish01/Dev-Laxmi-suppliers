@@ -24,13 +24,16 @@ from flask import (
 )
 from dotenv import load_dotenv
 
-# ── Optional MySQL import ─────────────────────────────────────────────────────
+# ── Optional psycopg2 import ──────────────────────────────────────────────────
 try:
-    import mysql.connector
-    from mysql.connector import Error as MySQLError, pooling as mysql_pooling
+    import psycopg2
+    import psycopg2.extras          # RealDictCursor
+    import psycopg2.pool
+    import psycopg2.errors
+    from psycopg2 import OperationalError as PGOperationalError
 except ImportError as exc:
     raise RuntimeError(
-        "mysql-connector-python is required. Run: pip install mysql-connector-python"
+        "psycopg2 is required. Run: pip install psycopg2-binary"
     ) from exc
 
 # ── Bootstrap ─────────────────────────────────────────────────────────────────
@@ -69,43 +72,66 @@ def _ensure_upload_folder() -> None:
 def _allowed_image_filename(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
 
+
 # ── Database Configuration ────────────────────────────────────────────────────
 DB_CONFIG = {
     "host":     os.getenv("DB_HOST", "localhost"),
-    "port":     int(os.getenv("DB_PORT", 3306)),
-    "user":     os.getenv("DB_USER", "root"),
+    "port":     int(os.getenv("DB_PORT", 5432)),
+    "user":     os.getenv("DB_USER", "postgres"),
     "password": os.getenv("DB_PASSWORD", ""),
-    "database": os.getenv("DB_NAME", "devlaxmi_db"),
-    "autocommit": True,
-    "connection_timeout": 10,
+    "dbname":   os.getenv("DB_NAME", "devlaxmi_db"),
 }
 
 DB_NAME = os.getenv("DB_NAME", "devlaxmi_db")
 
 # ── Database Connection Pool ──────────────────────────────────────────────────
-_pool: mysql_pooling.MySQLConnectionPool | None = None
+_pool: psycopg2.pool.ThreadedConnectionPool | None = None
 
 
-def get_pool() -> mysql_pooling.MySQLConnectionPool:
-    """Return (or lazily create) the MySQL connection pool."""
+def get_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    """Return (or lazily create) the PostgreSQL connection pool."""
     global _pool
     if _pool is None:
-        _pool = mysql_pooling.MySQLConnectionPool(
-            pool_name="devlaxmi_pool",
-            pool_size=5,
+        _pool = psycopg2.pool.ThreadedConnectionPool(
+            minconn=1,
+            maxconn=5,
             **DB_CONFIG,
         )
-        log.info("MySQL connection pool created (size=5).")
+        log.info("PostgreSQL connection pool created (maxconn=5).")
     return _pool
 
 
 def get_db():
     """Get a connection from the pool."""
-    return get_pool().get_connection()
+    return get_pool().getconn()
+
+
+def release_db(conn) -> None:
+    """Return a connection to the pool."""
+    get_pool().putconn(conn)
 
 
 # ── Database Initialization ───────────────────────────────────────────────────
 DEMO_PRODUCTS = []
+
+
+def _create_database_if_missing() -> None:
+    """
+    Connect to the default 'postgres' database and create DB_NAME if absent.
+    Must run outside a transaction (autocommit=True).
+    """
+    admin_cfg = {**DB_CONFIG, "dbname": "postgres"}
+    conn = psycopg2.connect(**admin_cfg)
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (DB_NAME,))
+    if not cur.fetchone():
+        cur.execute(f'CREATE DATABASE "{DB_NAME}" ENCODING \'UTF8\'')
+        log.info("Database '%s' created.", DB_NAME)
+    else:
+        log.info("Database '%s' already exists.", DB_NAME)
+    cur.close()
+    conn.close()
 
 
 def init_database() -> None:
@@ -114,79 +140,95 @@ def init_database() -> None:
     Called once at application startup.
     """
     _ensure_upload_folder()
+    _create_database_if_missing()
 
-    # --- Step 1: Create database if it doesn't exist ---
-    root_cfg = {k: v for k, v in DB_CONFIG.items() if k != "database"}
-    root_cfg.pop("autocommit", None)
-    root_cfg.pop("connection_timeout", None)
-    try:
-        conn = mysql.connector.connect(**root_cfg)
-        cur = conn.cursor()
-        cur.execute(f"CREATE DATABASE IF NOT EXISTS `{DB_NAME}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
-        cur.close()
-        conn.close()
-        log.info("Database '%s' is ready.", DB_NAME)
-    except MySQLError as exc:
-        log.error("Failed to create database: %s", exc)
-        raise
-
-    # --- Step 2: Create tables ---
-    conn = mysql.connector.connect(**{k: v for k, v in DB_CONFIG.items() if k not in ("autocommit",)},
-                                   autocommit=True)
+    conn = psycopg2.connect(**DB_CONFIG)
+    conn.autocommit = True
     cur = conn.cursor()
 
+    # ── products table ────────────────────────────────────────────────────────
     cur.execute("""
         CREATE TABLE IF NOT EXISTS products (
-            id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            name          VARCHAR(255)     NOT NULL,
-            category      ENUM('carpet','curtain','doormat','chair','table','hanger') NOT NULL,
-            brand         VARCHAR(100)     NOT NULL DEFAULT 'Unknown',
-            description   TEXT             NOT NULL,
-            price         DECIMAL(10, 2)   NOT NULL DEFAULT 0.00,
-            image_url     VARCHAR(512)     NOT NULL DEFAULT '',
-            style_tags    TEXT             NOT NULL DEFAULT '',
-            created_at    DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at    DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            INDEX idx_category (category),
-            INDEX idx_brand (brand)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            id           SERIAL PRIMARY KEY,
+            name         VARCHAR(255)   NOT NULL,
+            category     VARCHAR(20)    NOT NULL
+                             CHECK (category IN ('carpet','curtain','doormat','chair','table','hanger')),
+            brand        VARCHAR(100)   NOT NULL DEFAULT 'Unknown',
+            description  TEXT           NOT NULL,
+            price        NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+            image_url    VARCHAR(512)   NOT NULL DEFAULT '',
+            style_tags   TEXT           NOT NULL DEFAULT '',
+            created_at   TIMESTAMP      NOT NULL DEFAULT NOW(),
+            updated_at   TIMESTAMP      NOT NULL DEFAULT NOW()
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_products_brand    ON products(brand)")
+
+    # Trigger to keep updated_at current (equivalent to ON UPDATE CURRENT_TIMESTAMP)
+    cur.execute("""
+        CREATE OR REPLACE FUNCTION set_updated_at()
+        RETURNS TRIGGER LANGUAGE plpgsql AS $$
+        BEGIN
+            NEW.updated_at = NOW();
+            RETURN NEW;
+        END;
+        $$
+    """)
+    cur.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_trigger
+                WHERE tgname = 'trg_products_updated_at'
+            ) THEN
+                CREATE TRIGGER trg_products_updated_at
+                BEFORE UPDATE ON products
+                FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+            END IF;
+        END;
+        $$
     """)
 
-    # Attempt to add the brand column if the table already existed before this update
-    try:
-        cur.execute("ALTER TABLE products ADD COLUMN brand VARCHAR(100) NOT NULL DEFAULT 'Unknown' AFTER category")
-        cur.execute("CREATE INDEX idx_brand ON products(brand)")
-        log.info("Successfully added 'brand' column to existing products table.")
-    except MySQLError as exc:
-        if exc.errno == 1060: # Duplicate column name
-            pass
-        else:
-            log.warning("Could not alter table for brand: %s", exc)
+    # Add brand column if upgrading from an older schema
+    cur.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name='products' AND column_name='brand'
+            ) THEN
+                ALTER TABLE products ADD COLUMN brand VARCHAR(100) NOT NULL DEFAULT 'Unknown';
+                CREATE INDEX idx_products_brand ON products(brand);
+            END IF;
+        END;
+        $$
+    """)
 
+    # ── inquiries table ───────────────────────────────────────────────────────
     cur.execute("""
         CREATE TABLE IF NOT EXISTS inquiries (
-            id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            product_id    INT UNSIGNED     NOT NULL,
-            client_name   VARCHAR(255)     NOT NULL,
-            phone         VARCHAR(20)      NOT NULL,
-            message       TEXT             NULL,
-            created_at    DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT fk_inquiry_product
-                FOREIGN KEY (product_id) REFERENCES products(id)
-                ON DELETE CASCADE ON UPDATE CASCADE,
-            INDEX idx_product (product_id),
-            INDEX idx_created (created_at)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            id           SERIAL PRIMARY KEY,
+            product_id   INTEGER        NOT NULL
+                             REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,
+            client_name  VARCHAR(255)   NOT NULL,
+            phone        VARCHAR(20)    NOT NULL,
+            message      TEXT,
+            created_at   TIMESTAMP      NOT NULL DEFAULT NOW()
+        )
     """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_inquiries_product   ON inquiries(product_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_inquiries_created   ON inquiries(created_at)")
 
-    # --- Step 3: Seed demo data if empty ---
+    # ── Seed demo data if empty ───────────────────────────────────────────────
     cur.execute("SELECT COUNT(*) FROM products")
     (count,) = cur.fetchone()
-    if count == 0:
+    if count == 0 and DEMO_PRODUCTS:
         log.info("Seeding %d demo products…", len(DEMO_PRODUCTS))
         sql = """
             INSERT INTO products (name, category, brand, description, price, image_url, style_tags)
-            VALUES (%(name)s, %(category)s, %(brand)s, %(description)s, %(price)s, %(image_url)s, %(style_tags)s)
+            VALUES (%(name)s, %(category)s, %(brand)s, %(description)s,
+                    %(price)s, %(image_url)s, %(style_tags)s)
         """
         cur.executemany(sql, DEMO_PRODUCTS)
         log.info("Demo products seeded successfully.")
@@ -241,20 +283,14 @@ def reload_reco_model() -> None:
 def get_recommendations(product_id: int, product_category: str, top_n: int = 4) -> list[dict]:
     """
     Return up to `top_n` cross-category product recommendations for the given product.
-
-    Strategy:
-      1. Use cosine similarity from the pre-computed TF-IDF matrix.
-      2. Filter to only return products from the *opposite* category.
-      3. If the pickle model is unavailable, fall back to a simple DB query
-         returning random products from the opposite category.
     """
     mapping = {
-        "carpet": "curtain",
+        "carpet":  "curtain",
         "curtain": "doormat",
         "doormat": "carpet",
-        "chair": "table",
-        "table": "chair",
-        "hanger": "chair"
+        "chair":   "table",
+        "table":   "chair",
+        "hanger":  "chair",
     }
     opposite = mapping.get(product_category, "carpet")
 
@@ -268,7 +304,6 @@ def get_recommendations(product_id: int, product_category: str, top_n: int = 4) 
         if product_id in id_to_idx:
             row_idx = id_to_idx[product_id]
             sim_scores = list(enumerate(sim_matrix[row_idx]))
-            # Sort by similarity descending, skip self
             sim_scores.sort(key=lambda x: x[1], reverse=True)
 
             candidate_ids = []
@@ -282,7 +317,6 @@ def get_recommendations(product_id: int, product_category: str, top_n: int = 4) 
             if candidate_ids:
                 return _fetch_products_by_ids(candidate_ids)
 
-    # ── Fallback: random opposite-category products ───────────────────────────
     log.info("Using fallback recommendations for product %d.", product_id)
     return _fetch_random_products(opposite, top_n, exclude_id=product_id)
 
@@ -291,15 +325,16 @@ def _fetch_products_by_ids(ids: list[int]) -> list[dict]:
     """Fetch full product rows for a list of IDs, preserving order."""
     if not ids:
         return []
-    placeholders = ", ".join(["%s"] * len(ids))
-    query = f"SELECT * FROM products WHERE id IN ({placeholders})"
+    # psycopg2 can bind a tuple directly for ANY(ARRAY[...]) or use IN with a tuple
+    query = "SELECT * FROM products WHERE id = ANY(%s)"
     conn = get_db()
-    cur = conn.cursor(dictionary=True)
-    cur.execute(query, ids)
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    # Preserve the similarity-ranked order
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(query, (list(ids),))
+        rows = [dict(r) for r in cur.fetchall()]
+        cur.close()
+    finally:
+        release_db(conn)
     order = {pid: i for i, pid in enumerate(ids)}
     rows.sort(key=lambda r: order.get(r["id"], 999))
     return rows
@@ -307,13 +342,15 @@ def _fetch_products_by_ids(ids: list[int]) -> list[dict]:
 
 def _fetch_random_products(category: str, limit: int, exclude_id: int = 0) -> list[dict]:
     """Fetch random products of a given category, excluding a specific product ID."""
-    query = "SELECT * FROM products WHERE category=%s AND id != %s ORDER BY RAND() LIMIT %s"
+    query = "SELECT * FROM products WHERE category=%s AND id != %s ORDER BY RANDOM() LIMIT %s"
     conn = get_db()
-    cur = conn.cursor(dictionary=True)
-    cur.execute(query, (category, exclude_id, limit))
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(query, (category, exclude_id, limit))
+        rows = [dict(r) for r in cur.fetchall()]
+        cur.close()
+    finally:
+        release_db(conn)
     return rows
 
 
@@ -322,7 +359,6 @@ def admin_required(f):
     """
     Decorator that enforces admin authentication.
     CRITICAL DECEPTION RULE: Any unauthorized access triggers abort(404).
-    No redirect, no "access denied" — the admin area simply does not exist.
     """
     @functools.wraps(f)
     def decorated(*args, **kwargs):
@@ -335,13 +371,11 @@ def admin_required(f):
 # ── Error Handlers ────────────────────────────────────────────────────────────
 @app.errorhandler(404)
 def page_not_found(e):
-    """Render a clean, generic 404 page for all 404 errors."""
     return render_template("404.html"), 404
 
 
 @app.errorhandler(500)
 def internal_error(e):
-    """Render a clean 500 error page."""
     log.error("Internal server error: %s", e)
     return render_template("500.html"), 500
 
@@ -350,41 +384,38 @@ def internal_error(e):
 
 @app.route("/")
 def home():
-    """
-    Main catalog page. Loads all products and passes them to the template.
-    Client-side JS handles category filter toggling without page reload.
-    """
     category_filter = request.args.get("category", "all").lower()
     conn = get_db()
-    cur = conn.cursor(dictionary=True)
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    if category_filter in ("carpet", "curtain", "doormat", "chair", "table", "hanger"):
-        cur.execute(
-            "SELECT * FROM products WHERE category = %s ORDER BY created_at DESC",
-            (category_filter,)
-        )
-    else:
-        cur.execute("SELECT * FROM products ORDER BY category, created_at DESC")
+        if category_filter in ("carpet", "curtain", "doormat", "chair", "table", "hanger"):
+            cur.execute(
+                "SELECT * FROM products WHERE category = %s ORDER BY created_at DESC",
+                (category_filter,)
+            )
+        else:
+            cur.execute("SELECT * FROM products ORDER BY category, created_at DESC")
 
-    products = cur.fetchall()
+        products = [dict(r) for r in cur.fetchall()]
 
-    # Convert Decimal price to float for JSON serialisation in template
-    for p in products:
-        p["price"] = float(p["price"])
+        for p in products:
+            p["price"] = float(p["price"])
 
-    carpet_count = sum(1 for p in products if p["category"] == "carpet")
-    curtain_count = sum(1 for p in products if p["category"] == "curtain")
-    doormat_count = sum(1 for p in products if p["category"] == "doormat")
-    chair_count = sum(1 for p in products if p["category"] == "chair")
-    table_count = sum(1 for p in products if p["category"] == "table")
-    hanger_count = sum(1 for p in products if p["category"] == "hanger")
-    furniture_products = [p for p in products if p["category"] in ("chair", "table", "hanger")]
+        carpet_count  = sum(1 for p in products if p["category"] == "carpet")
+        curtain_count = sum(1 for p in products if p["category"] == "curtain")
+        doormat_count = sum(1 for p in products if p["category"] == "doormat")
+        chair_count   = sum(1 for p in products if p["category"] == "chair")
+        table_count   = sum(1 for p in products if p["category"] == "table")
+        hanger_count  = sum(1 for p in products if p["category"] == "hanger")
+        furniture_products = [p for p in products if p["category"] in ("chair", "table", "hanger")]
 
-    cur.execute("SELECT DISTINCT brand FROM products WHERE brand != 'Unknown' ORDER BY brand")
-    brands = [row["brand"] for row in cur.fetchall()]
+        cur.execute("SELECT DISTINCT brand FROM products WHERE brand != 'Unknown' ORDER BY brand")
+        brands = [row["brand"] for row in cur.fetchall()]
 
-    cur.close()
-    conn.close()
+        cur.close()
+    finally:
+        release_db(conn)
 
     return render_template(
         "home.html",
@@ -404,16 +435,15 @@ def home():
 
 @app.route("/product/<int:product_id>")
 def product_detail(product_id: int):
-    """
-    Product detail page. Shows item details, inquiry form,
-    and AI 'Complete the Look' cross-category recommendations.
-    """
     conn = get_db()
-    cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT * FROM products WHERE id = %s", (product_id,))
-    product = cur.fetchone()
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT * FROM products WHERE id = %s", (product_id,))
+        product = cur.fetchone()
+        product = dict(product) if product else None
+        cur.close()
+    finally:
+        release_db(conn)
 
     if not product:
         abort(404)
@@ -436,10 +466,6 @@ def product_detail(product_id: int):
 
 @app.route("/api/inquire", methods=["POST"])
 def api_inquire():
-    """
-    Submit an inquiry lead for a product.
-    Expects JSON: { product_id, client_name, phone, message? }
-    """
     data = request.get_json(silent=True) or {}
 
     product_id  = data.get("product_id")
@@ -447,7 +473,6 @@ def api_inquire():
     phone       = str(data.get("phone", "")).strip()
     message     = str(data.get("message", "")).strip()
 
-    # ── Input validation ─────────────────────────────────────────────────────
     if not product_id or not client_name or not phone:
         return jsonify({"success": False, "error": "Product ID, name, and phone are required."}), 400
 
@@ -457,27 +482,26 @@ def api_inquire():
     if len(client_name) > 255:
         return jsonify({"success": False, "error": "Name is too long."}), 400
 
-    # Basic phone validation: digits, spaces, +, -, ()
     import re
     if not re.match(r"^[\d\s\+\-\(\)]{7,20}$", phone):
         return jsonify({"success": False, "error": "Invalid phone number format."}), 400
 
-    # ── Check product exists ──────────────────────────────────────────────────
     conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT id FROM products WHERE id = %s", (product_id,))
-    if not cur.fetchone():
-        cur.close()
-        conn.close()
-        return jsonify({"success": False, "error": "Product not found."}), 404
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM products WHERE id = %s", (product_id,))
+        if not cur.fetchone():
+            cur.close()
+            return jsonify({"success": False, "error": "Product not found."}), 404
 
-    # ── Insert inquiry ────────────────────────────────────────────────────────
-    cur.execute(
-        "INSERT INTO inquiries (product_id, client_name, phone, message) VALUES (%s, %s, %s, %s)",
-        (product_id, client_name, phone, message or None),
-    )
-    cur.close()
-    conn.close()
+        cur.execute(
+            "INSERT INTO inquiries (product_id, client_name, phone, message) VALUES (%s, %s, %s, %s)",
+            (product_id, client_name, phone, message or None),
+        )
+        conn.commit()
+        cur.close()
+    finally:
+        release_db(conn)
 
     log.info("New inquiry from '%s' (%s) for product #%d.", client_name, phone, product_id)
     return jsonify({"success": True, "message": "Your inquiry has been received. We'll contact you shortly!"}), 201
@@ -487,13 +511,6 @@ def api_inquire():
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin_gate():
-    """
-    Admin authentication gate.
-    GET:  Render plain single-field passcode form.
-    POST: Verify passcode.
-      - Correct → set session flag, redirect to dashboard.
-      - Wrong   → abort(404) immediately (FAKE 404 DECEPTION).
-    """
     if request.method == "POST":
         entered = request.form.get("passcode", "")
         if entered == ADMIN_PASSCODE:
@@ -502,10 +519,8 @@ def admin_gate():
             session.permanent = True
             return redirect(url_for("admin_dashboard"))
         else:
-            # CRITICAL DECEPTION: wrong passcode → fake 404
             abort(404)
 
-    # If already authenticated, skip the gate
     if session.get("admin_authenticated"):
         return redirect(url_for("admin_dashboard"))
 
@@ -515,67 +530,51 @@ def admin_gate():
 @app.route("/admin/dashboard")
 @admin_required
 def admin_dashboard():
-    """
-    Private admin dashboard.
-    Shows all inquiries and allows new product creation.
-    Protected by @admin_required which triggers abort(404) for unauthorized access.
-    """
     conn = get_db()
-    cur = conn.cursor(dictionary=True)
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    cur.execute("SELECT id, name, category, price FROM products ORDER BY created_at DESC")
-    products = cur.fetchall()
+        cur.execute("SELECT id, name, category, price FROM products ORDER BY created_at DESC")
+        products = [dict(r) for r in cur.fetchall()]
 
-    # Fetch all inquiries with product details, newest first
-    cur.execute("""
-        SELECT
-            i.id,
-            i.client_name,
-            i.phone,
-            i.message,
-            i.created_at,
-            p.id        AS product_id,
-            p.name      AS product_name,
-            p.category  AS product_category
-        FROM inquiries i
-        JOIN products p ON i.product_id = p.id
-        ORDER BY i.created_at DESC
-    """)
-    inquiries = cur.fetchall()
+        cur.execute("""
+            SELECT
+                i.id,
+                i.client_name,
+                i.phone,
+                i.message,
+                i.created_at,
+                p.id        AS product_id,
+                p.name      AS product_name,
+                p.category  AS product_category
+            FROM inquiries i
+            JOIN products p ON i.product_id = p.id
+            ORDER BY i.created_at DESC
+        """)
+        inquiries = [dict(r) for r in cur.fetchall()]
 
-    # Summary stats
-    stats_cur = conn.cursor()
+        stats_cur = conn.cursor()
 
-    stats_cur.execute("SELECT COUNT(*) FROM inquiries")
-    (total_inquiries,) = stats_cur.fetchone()
+        def _count(query, *args):
+            stats_cur.execute(query, args)
+            return stats_cur.fetchone()[0]
 
-    stats_cur.execute("SELECT COUNT(*) FROM products")
-    (total_products,) = stats_cur.fetchone()
+        total_inquiries = _count("SELECT COUNT(*) FROM inquiries")
+        total_products  = _count("SELECT COUNT(*) FROM products")
+        carpet_count    = _count("SELECT COUNT(*) FROM products WHERE category='carpet'")
+        curtain_count   = _count("SELECT COUNT(*) FROM products WHERE category='curtain'")
+        doormat_count   = _count("SELECT COUNT(*) FROM products WHERE category='doormat'")
+        chair_count     = _count("SELECT COUNT(*) FROM products WHERE category='chair'")
+        table_count     = _count("SELECT COUNT(*) FROM products WHERE category='table'")
+        hanger_count    = _count("SELECT COUNT(*) FROM products WHERE category='hanger'")
 
-    stats_cur.execute("SELECT COUNT(*) FROM products WHERE category='carpet'")
-    (carpet_count,) = stats_cur.fetchone()
+        cur.execute("SELECT DISTINCT brand FROM products WHERE brand != 'Unknown' ORDER BY brand")
+        brands = [row["brand"] for row in cur.fetchall()]
 
-    stats_cur.execute("SELECT COUNT(*) FROM products WHERE category='curtain'")
-    (curtain_count,) = stats_cur.fetchone()
-
-    stats_cur.execute("SELECT COUNT(*) FROM products WHERE category='doormat'")
-    (doormat_count,) = stats_cur.fetchone()
-
-    stats_cur.execute("SELECT COUNT(*) FROM products WHERE category='chair'")
-    (chair_count,) = stats_cur.fetchone()
-
-    stats_cur.execute("SELECT COUNT(*) FROM products WHERE category='table'")
-    (table_count,) = stats_cur.fetchone()
-
-    stats_cur.execute("SELECT COUNT(*) FROM products WHERE category='hanger'")
-    (hanger_count,) = stats_cur.fetchone()
-    
-    cur.execute("SELECT DISTINCT brand FROM products WHERE brand != 'Unknown' ORDER BY brand")
-    brands = [row["brand"] for row in cur.fetchall()]
-
-    stats_cur.close()
-    cur.close()
-    conn.close()
+        stats_cur.close()
+        cur.close()
+    finally:
+        release_db(conn)
 
     return render_template(
         "admin.html",
@@ -595,7 +594,6 @@ def admin_dashboard():
 
 @app.route("/admin/logout")
 def admin_logout():
-    """Clear admin session and redirect to home."""
     session.clear()
     return redirect(url_for("home"))
 
@@ -605,12 +603,6 @@ def admin_logout():
 @app.route("/api/admin/products", methods=["POST"])
 @admin_required
 def api_admin_create_product():
-    """
-    Create a new product.
-    Expects JSON or multipart form data with: name, category, description, price, image_url?, style_tags?, photo?
-    After creation, invalidates the cached recommendation model so it's re-loaded
-    on next request (the admin should also manually re-run recommendation.py).
-    """
     data = request.get_json(silent=True) or request.form
 
     name        = str(data.get("name", "")).strip()
@@ -625,10 +617,10 @@ def api_admin_create_product():
         if not _allowed_image_filename(photo.filename):
             return jsonify({"success": False, "error": "Photo must be png, jpg, jpeg, gif, or webp."}), 400
         _ensure_upload_folder()
-        safe_name = secure_filename(photo.filename)
-        stamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
+        safe_name   = secure_filename(photo.filename)
+        stamp       = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
         stored_name = f"{stamp}_{safe_name}"
-        photo_path = os.path.join(UPLOAD_FOLDER, stored_name)
+        photo_path  = os.path.join(UPLOAD_FOLDER, stored_name)
         photo.save(photo_path)
         image_url = url_for("static", filename=f"uploads/{stored_name}")
 
@@ -645,17 +637,20 @@ def api_admin_create_product():
         return jsonify({"success": False, "error": "Category must be 'carpet', 'curtain', 'doormat', 'chair', 'table', or 'hanger'."}), 400
 
     conn = get_db()
-    cur = conn.cursor()
-    cur.execute(
-        """INSERT INTO products (name, category, brand, description, price, image_url, style_tags)
-           VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-        (name, category, brand, description, price, image_url, style_tags),
-    )
-    new_id = cur.lastrowid
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """INSERT INTO products (name, category, brand, description, price, image_url, style_tags)
+               VALUES (%s, %s, %s, %s, %s, %s, %s)
+               RETURNING id""",
+            (name, category, brand, description, price, image_url, style_tags),
+        )
+        (new_id,) = cur.fetchone()
+        conn.commit()
+        cur.close()
+    finally:
+        release_db(conn)
 
-    # Keep using the prebuilt recommendation pickle on live deploys.
     reload_reco_model()
 
     log.info("Admin created new product #%d: '%s' (%s).", new_id, name, category)
@@ -669,44 +664,43 @@ def api_admin_create_product():
 @app.route("/api/admin/products/<int:product_id>", methods=["DELETE"])
 @admin_required
 def api_admin_delete_product(product_id: int):
-    """Delete a product and refresh recommendations."""
     conn = get_db()
-    cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT id FROM products WHERE id = %s", (product_id,))
-    product = cur.fetchone()
-    if not product:
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT id FROM products WHERE id = %s", (product_id,))
+        product = cur.fetchone()
+        if not product:
+            cur.close()
+            return jsonify({"success": False, "error": "Product not found."}), 404
+
+        cur.execute("DELETE FROM products WHERE id = %s", (product_id,))
+        conn.commit()
         cur.close()
-        conn.close()
-        return jsonify({"success": False, "error": "Product not found."}), 404
+    finally:
+        release_db(conn)
 
-    cur.execute("DELETE FROM products WHERE id = %s", (product_id,))
-    cur.close()
-    conn.close()
-
-    # Keep using the prebuilt recommendation pickle on live deploys.
     reload_reco_model()
-
     return jsonify({"success": True, "message": "Product deleted."}), 200
 
 
 @app.route("/api/admin/inquiries", methods=["GET"])
 @admin_required
 def api_admin_get_inquiries():
-    """Return all inquiries as JSON (for AJAX dashboard refresh)."""
     conn = get_db()
-    cur = conn.cursor(dictionary=True)
-    cur.execute("""
-        SELECT i.id, i.client_name, i.phone, i.message,
-               i.created_at, p.name AS product_name, p.category AS product_category
-        FROM inquiries i
-        JOIN products p ON i.product_id = p.id
-        ORDER BY i.created_at DESC
-    """)
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT i.id, i.client_name, i.phone, i.message,
+                   i.created_at, p.name AS product_name, p.category AS product_category
+            FROM inquiries i
+            JOIN products p ON i.product_id = p.id
+            ORDER BY i.created_at DESC
+        """)
+        rows = [dict(r) for r in cur.fetchall()]
+        cur.close()
+    finally:
+        release_db(conn)
 
-    # Serialize datetimes
     for row in rows:
         if isinstance(row.get("created_at"), datetime):
             row["created_at"] = row["created_at"].strftime("%d %b %Y, %I:%M %p")
@@ -729,8 +723,6 @@ def create_app():
 
 if __name__ == "__main__":
     create_app()
-    # Note: In development, SESSION_COOKIE_SECURE should be False.
-    # Override here for local testing:
     app.config["SESSION_COOKIE_SECURE"] = False
     app.run(
         host="0.0.0.0",
