@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dev Laxmi Suppliers</title>
+  <!-- Intentionally minimal & anonymous — no admin clues in metadata -->
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #f8f9fa;
+      color: #212529;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gate-card {
+      width: 100%;
+      max-width: 380px;
+      padding: 2.5rem;
+      background: #ffffff;
+      border: 1px solid rgba(37,99,235,0.25);
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+
+    .gate-logo {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #2563eb;
+      margin-bottom: 2rem;
+      opacity: 0.7;
+    }
+
+    .gate-title {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: #212529;
+    }
+
+    .gate-sub {
+      font-size: 0.8rem;
+      color: #6c757d;
+      margin-bottom: 1.75rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #adb5bd;
+      margin-bottom: 0.4rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      background: #f1f3f5;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      color: #212529;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      outline: none;
+      transition: border-color 0.25s;
+    }
+
+    .form-input:focus { border-color: #2563eb; }
+    .form-input::placeholder { color: #adb5bd; }
+
+    .btn-enter {
+      width: 100%;
+      margin-top: 1.25rem;
+      padding: 0.85rem;
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      color: #ffffff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.25s, transform 0.2s;
+    }
+
+    .btn-enter:hover { opacity: 0.9; transform: translateY(-1px); }
+  </style>
+</head>
+<body>
+  <div class="gate-card" role="main">
+    <div class="gate-logo">Dev Laxmi Suppliers</div>
+    <h1 class="gate-title">Access Portal</h1>
+    <p class="gate-sub">Enter your passcode to continue.</p>
+
+    <form method="POST" action="{{ url_for('admin_gate') }}" id="gate-form">
+      <label class="form-label" for="passcode">Passcode</label>
+      <input
+        type="password"
+        id="passcode"
+        name="passcode"
+        class="form-input"
+        placeholder="••••••••••••"
+        autocomplete="current-password"
+        autofocus
+        required
+      />
+      <button type="submit" class="btn-enter" id="btn-enter">Enter</button>
+    </form>
+  </div>
+</body>
+</html>

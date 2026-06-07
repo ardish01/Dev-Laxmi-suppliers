@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ product.name }} — Dev Laxmi Suppliers</title>
+  <meta name="description" content="{{ product.description[:160] }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:        #2563eb;
+      --primary-light:  #3b82f6;
+      --primary-dark:   #1d4ed8;
+      --bg-deep:     #f8f9fa;
+      --bg-card:     #ffffff;
+      --bg-surface:  #f1f3f5;
+      --bg-elevated: #e9ecef;
+      --border:      #dee2e6;
+      --border-primary: rgba(37,99,235,0.25);
+      --text-primary:#212529;
+      --text-muted:  #6c757d;
+      --text-dim:    #adb5bd;
+      --carpet-clr:  #b04b3a;
+      --curtain-clr: #3a7ab0;
+      --doormat-clr: #795548;
+      --success:     #2b8a3e;
+      --error:       #c92a2a;
+      --radius-sm:   6px;
+      --radius-md:   12px;
+      --radius-lg:   20px;
+      --shadow-card: 0 4px 16px rgba(0,0,0,0.06);
+      --transition:  0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--primary-dark); border-radius: 3px; }
+
+    /* ── Navigation ─────────────────────────────────────────────────────── */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(1rem, 4vw, 3rem);
+      height: 72px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-primary);
+    }
+
+    .nav-brand { display: flex; flex-direction: column; line-height: 1.15; text-decoration: none; }
+    .nav-brand-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--primary); }
+    .nav-brand-sub { font-size: 0.65rem; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+    .nav-back {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: var(--transition);
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .nav-back:hover { color: var(--text-primary); border-color: var(--border-primary); }
+
+    /* ── Breadcrumb ─────────────────────────────────────────────────────── */
+    .breadcrumb {
+      padding: 1rem clamp(1rem, 4vw, 3rem);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .breadcrumb a { color: var(--text-muted); text-decoration: none; transition: var(--transition); }
+    .breadcrumb a:hover { color: var(--primary); }
+    .breadcrumb-sep { color: var(--text-dim); }
+    .breadcrumb-current { color: var(--text-primary); }
+
+    /* ── Main Layout ────────────────────────────────────────────────────── */
+    .product-layout {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 2rem;
+      padding: 2.5rem clamp(1rem, 4vw, 3rem);
+      max-width: 1280px;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .product-layout { grid-template-columns: 1fr; }
+    }
+
+    /* ── Left Column: Product Media & Details ───────────────────────────── */
+    .product-media { position: relative; }
+
+    .product-image-frame {
+      position: relative;
+      padding: 1rem;
+      border-radius: calc(var(--radius-lg) + 6px);
+      background:
+        linear-gradient(135deg, rgba(37,99,235,0.15), rgba(255,255,255,0.95)),
+        linear-gradient(180deg, #ffffff, #f3f6fb);
+      border: 1px solid rgba(37,99,235,0.14);
+      box-shadow: 0 18px 50px rgba(15,23,42,0.10);
+    }
+
+    .product-image-main {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      border-radius: calc(var(--radius-lg) - 4px);
+      background: radial-gradient(circle at top, #ffffff, #eef3f9 70%);
+      border: 1px solid rgba(15,23,42,0.08);
+      padding: 0.75rem;
+    }
+
+    .product-image-placeholder {
+      width: 100%;
+      aspect-ratio: 4/3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      background:
+        linear-gradient(135deg, rgba(37,99,235,0.08), rgba(255,255,255,0.96)),
+        linear-gradient(180deg, #ffffff, #eef3f9);
+      border-radius: calc(var(--radius-lg) - 4px);
+      border: 1px solid rgba(37,99,235,0.12);
+    }
+
+    .product-image-placeholder .emoji {
+      font-size: 4.25rem;
+      opacity: 0.85;
+      filter: drop-shadow(0 8px 18px rgba(15,23,42,0.12));
+    }
+    .product-image-placeholder p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .category-badge-large {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.4rem 0.9rem;
+      border-radius: 100px;
+    }
+
+    .category-badge-large.carpet { background: rgba(176,75,58,0.9); color: #fde8e4; }
+    .category-badge-large.curtain { background: rgba(58,122,176,0.9); color: #e3f2fd; }
+    .category-badge-large.doormat { background: rgba(121,85,72,0.9); color: #efebe9; }
+
+    .product-info-card {
+      background: linear-gradient(135deg, #0f4c81, #123d66);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      margin-top: 1.5rem;
+      color: #fff;
+      box-shadow: 0 18px 40px rgba(15,23,42,0.18);
+    }
+
+    .product-info-card h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 0.75rem;
+      color: #fff;
+    }
+
+    .product-price-large {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #ffd166;
+      margin-bottom: 1.25rem;
+    }
+
+    .product-price-large span {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.8);
+      font-weight: 400;
+    }
+
+    .product-divider {
+      height: 1px;
+      background: rgba(255,255,255,0.16);
+      margin: 1.25rem 0;
+    }
+
+    .product-description {
+      font-size: 0.92rem;
+      color: rgba(255,255,255,0.88);
+      line-height: 1.7;
+      margin-bottom: 1.25rem;
+    }
+
+    .product-tags-section h4 {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 0.6rem;
+    }
+
+    .product-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .product-tag {
+      font-size: 0.72rem;
+      padding: 0.25rem 0.65rem;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 100px;
+      color: #fff;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    /* ── Right Column: Inquiry + Reco ───────────────────────────────────── */
+    .sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* ── Inquiry Form Card ──────────────────────────────────────────────── */
+    .inquiry-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .inquiry-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary-dark), var(--primary-light), var(--primary-dark));
+    }
+
+    .inquiry-card-header { margin-bottom: 1.5rem; }
+
+    .inquiry-card-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.35rem;
+    }
+
+    .inquiry-card-header p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .form-group { margin-bottom: 1rem; }
+
+    .form-group label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+    }
+
+    .form-input::placeholder { color: var(--text-dim); }
+
+    .form-input.error { border-color: var(--error); }
+
+    .field-error {
+      font-size: 0.72rem;
+      color: var(--error);
+      margin-top: 0.3rem;
+      display: none;
+    }
+
+    .field-error.visible { display: block; }
+
+    .btn-inquiry {
+      width: 100%;
+      padding: 0.9rem;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: #ffffff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .btn-inquiry:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+    }
+
+    .btn-inquiry:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+    .btn-inquiry .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    .btn-inquiry.loading .spinner { display: block; }
+    .btn-inquiry.loading .btn-text { display: none; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Toast / Status Message ────────────────────────────────────────── */
+    .inquiry-toast {
+      display: none;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.9rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.84rem;
+      margin-top: 1rem;
+      animation: fadeInUp 0.35s ease;
+    }
+
+    .inquiry-toast.success {
+      display: flex;
+      background: rgba(76,175,80,0.1);
+      border: 1px solid rgba(76,175,80,0.35);
+      color: #81c784;
+    }
+
+    .inquiry-toast.error-state {
+      display: flex;
+      background: rgba(244,67,54,0.1);
+      border: 1px solid rgba(244,67,54,0.35);
+      color: #e57373;
+    }
+
+    .inquiry-toast .toast-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 0.05rem; }
+
+    /* ── AI Recommendation Card ─────────────────────────────────────────── */
+    .reco-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .reco-header {
+      padding: 1.25rem 1.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--bg-elevated), var(--bg-card));
+    }
+
+    .reco-header-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 0.35rem;
+    }
+
+    .ai-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: pulse-dot 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.7); }
+    }
+
+    .reco-header h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .reco-header p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .reco-list { padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .reco-item {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.75rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      text-decoration: none;
+      color: inherit;
+      transition: var(--transition);
+    }
+
+    .reco-item:hover {
+      border-color: var(--border-primary);
+      background: var(--bg-elevated);
+      transform: translateX(3px);
+    }
+
+    .reco-item-thumb {
+      width: 54px;
+      height: 54px;
+      flex-shrink: 0;
+      border-radius: var(--radius-sm);
+      background: var(--bg-elevated);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      overflow: hidden;
+    }
+
+    .reco-item-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .reco-item-info { flex: 1; min-width: 0; }
+
+    .reco-item-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .reco-item-cat {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: capitalize;
+      margin-top: 0.1rem;
+    }
+
+    .reco-item-price {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
+    .reco-empty {
+      padding: 1.5rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.82rem;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────────────── */
+    .footer {
+      padding: 2rem clamp(1rem, 4vw, 3rem);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      background: var(--bg-surface);
+      margin-top: 3rem;
+    }
+
+    .footer-brand { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--primary); }
+    .footer-copy { font-size: 0.78rem; color: var(--text-dim); }
+
+    /* ── Animations ─────────────────────────────────────────────────────── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .product-layout > * { animation: fadeInUp 0.45s ease both; }
+    .product-layout > *:nth-child(2) { animation-delay: 0.1s; }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <a href="{{ url_for('home') }}" class="nav-brand">
+      <span class="nav-brand-title">Dev Laxmi Suppliers</span>
+      <span class="nav-brand-sub">Est. Premium Textiles</span>
+    </a>
+    <a href="{{ url_for('home') }}" class="nav-back" id="btn-back-to-catalog">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back to Catalog
+    </a>
+  </nav>
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('home') }}">Catalog</a>
+    <span class="breadcrumb-sep" aria-hidden="true">›</span>
+    <a href="{{ url_for('home', category=product.category) }}">{{ product.category | capitalize }}s</a>
+    <span class="breadcrumb-sep" aria-hidden="true">›</span>
+    <span class="breadcrumb-current">{{ product.name }}</span>
+  </div>
+
+  <!-- Main Product Layout -->
+  <main class="product-layout" aria-label="Product details">
+
+    <!-- Left: Product Media + Info -->
+    <div class="product-left">
+      <div class="product-media">
+        {% if product.image_url %}
+        <div class="product-image-frame">
+          <img
+            class="product-image-main"
+            src="{{ product.image_url }}"
+            alt="{{ product.name }}"
+            id="product-main-image"
+            onerror="this.style.display='none';document.getElementById('image-placeholder').style.display='flex';document.querySelector('.product-image-frame').style.display='none';"
+          />
+        </div>
+        {% endif %}
+        <div class="product-image-frame" {% if product.image_url %}style="display:none;"{% endif %}>
+          <div class="product-image-placeholder"
+               id="image-placeholder"
+                {% if product.image_url %}style="display:none;"{% endif %}>
+            <span class="emoji">{% if product.category == 'carpet' %}🟫{% elif product.category == 'doormat' %}🚪{% else %}🔷{% endif %}</span>
+            <p>{{ product.category | capitalize }} Preview</p>
+          </div>
+        </div>
+        <span class="category-badge-large {{ product.category }}">
+          {{ product.category | capitalize }}
+        </span>
+      </div>
+
+      <!-- Product Details Card -->
+      <div class="product-info-card">
+        <div style="font-size:0.75rem; color:rgba(255,255,255,0.75); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.25rem;">
+          {{ product.brand }}
+        </div>
+        <h1>{{ product.name }}</h1>
+        <div class="product-price-large">
+          ₹{{ '{:,.0f}'.format(product.price) }}
+          <span>/ per unit (contact for bulk pricing)</span>
+        </div>
+        <div class="product-divider"></div>
+        <p class="product-description">{{ product.description }}</p>
+        {% if product.style_tags %}
+        <div class="product-tags-section">
+          <h4>Style Tags</h4>
+          <div class="product-tags">
+            {% for tag in product.style_tags.split() %}
+            <span class="product-tag">{{ tag }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right: Sidebar (Inquiry + AI Recommendations) -->
+    <div class="sidebar">
+
+      <!-- Inquiry Form Card -->
+      <div class="inquiry-card" role="region" aria-labelledby="inquiry-heading">
+        <div class="inquiry-card-header">
+          <h2 id="inquiry-heading">📩 Request a Quote</h2>
+          <p>Interested in this {{ product.category }}? Share your details and we'll get back to you promptly.</p>
+        </div>
+
+        <form id="inquiry-form" novalidate aria-label="Inquiry form">
+          <input type="hidden" id="product-id" value="{{ product.id }}" />
+
+          <div class="form-group">
+            <label for="client-name">Your Full Name *</label>
+            <input
+              type="text"
+              id="client-name"
+              class="form-input"
+              placeholder="e.g. Ramesh Sharma"
+              autocomplete="name"
+              maxlength="255"
+              required
+            />
+            <span class="field-error" id="error-name" role="alert">Please enter your full name.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="client-phone">Phone Number *</label>
+            <input
+              type="tel"
+              id="client-phone"
+              class="form-input"
+              placeholder="e.g. +91 98765 43210"
+              autocomplete="tel"
+              maxlength="20"
+              required
+            />
+            <span class="field-error" id="error-phone" role="alert">Please enter a valid phone number.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="client-message">Message (Optional)</label>
+            <textarea
+              id="client-message"
+              class="form-input"
+              placeholder="Any specific requirements, dimensions, or questions…"
+              rows="3"
+              style="resize:vertical; min-height:80px;"
+            ></textarea>
+          </div>
+
+          <button type="submit" id="btn-inquire" class="btn-inquiry">
+            <div class="spinner" aria-hidden="true"></div>
+            <span class="btn-text">Send Inquiry</span>
+          </button>
+        </form>
+
+        <div class="inquiry-toast" id="inquiry-toast" role="status" aria-live="polite">
+          <span class="toast-icon" id="toast-icon"></span>
+          <span id="toast-message"></span>
+        </div>
+      </div>
+
+      <!-- AI "Complete the Look" Recommendations -->
+      <div class="reco-card" role="complementary" aria-labelledby="reco-heading">
+        <div class="reco-header">
+          <div class="reco-header-eyebrow">
+            <div class="ai-dot" aria-hidden="true"></div>
+            AI Powered Pairing
+          </div>
+          <h3 id="reco-heading">Complete the Look</h3>
+          <p>
+            {% if product.category == 'carpet' %}
+              Curtains that pair beautifully with this carpet's style
+            {% elif product.category == 'doormat' %}
+              Carpets that complement this doormat's aesthetic
+            {% else %}
+              Doormats that match this curtain's style
+            {% endif %}
+          </p>
+        </div>
+
+        {% if recommendations %}
+        <div class="reco-list" role="list" aria-label="Recommended products">
+          {% for reco in recommendations %}
+          <a
+            href="{{ url_for('product_detail', product_id=reco.id) }}"
+            class="reco-item"
+            id="reco-item-{{ reco.id }}"
+            role="listitem"
+            aria-label="{{ reco.name }}, ₹{{ '{:,.0f}'.format(reco.price) }}"
+          >
+            <div class="reco-item-thumb" aria-hidden="true">
+              {% if reco.image_url %}
+              <img src="{{ reco.image_url }}" alt="{{ reco.name }}"
+                   onerror="this.parentElement.innerHTML='{% if reco.category == \"carpet\" %}🟫{% elif reco.category == \"doormat\" %}🚪{% else %}🔷{% endif %}';" />
+              {% else %}
+              {% if reco.category == 'carpet' %}🟫{% elif reco.category == 'doormat' %}🚪{% else %}🔷{% endif %}
+              {% endif %}
+            </div>
+            <div class="reco-item-info">
+              <div class="reco-item-name">{{ reco.name }}</div>
+              <div class="reco-item-cat">{{ reco.category | capitalize }}</div>
+            </div>
+            <div class="reco-item-price">₹{{ '{:,.0f}'.format(reco.price) }}</div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="reco-empty" aria-live="polite">
+          <p>No {{ reco_category }} recommendations available yet.</p>
+          <p style="margin-top:0.35rem; font-size:0.72rem; opacity:0.6;">Run <code>recommendation.py</code> to enable AI pairings.</p>
+        </div>
+        {% endif %}
+      </div>
+
+    </div><!-- /.sidebar -->
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer-brand">Dev Laxmi Suppliers</div>
+    <p class="footer-copy">© {{ 2024 }} Dev Laxmi Suppliers · Premium Carpets, Curtains &amp; Doormats</p>
+  </footer>
+
+  <script>
+    /* =====================================================================
+       Vanilla ES6 — Inquiry Form Submission
+       Async POST to /api/inquire with validation and interactive feedback.
+    ===================================================================== */
+    (function() {
+      'use strict';
+
+      const form       = document.getElementById('inquiry-form');
+      const btnInquire = document.getElementById('btn-inquire');
+      const toast      = document.getElementById('inquiry-toast');
+      const toastIcon  = document.getElementById('toast-icon');
+      const toastMsg   = document.getElementById('toast-message');
+
+      const nameInput  = document.getElementById('client-name');
+      const phoneInput = document.getElementById('client-phone');
+      const msgInput   = document.getElementById('client-message');
+      const productId  = parseInt(document.getElementById('product-id').value, 10);
+
+      // ── Clear field errors on input ─────────────────────────────────────
+      [nameInput, phoneInput].forEach(input => {
+        input.addEventListener('input', () => {
+          input.classList.remove('error');
+          const errEl = document.getElementById('error-' + (input === nameInput ? 'name' : 'phone'));
+          if (errEl) errEl.classList.remove('visible');
+        });
+      });
+
+      // ── Validation ──────────────────────────────────────────────────────
+      function validate() {
+        let valid = true;
+        const phoneRegex = /^[\d\s\+\-\(\)]{7,20}$/;
+
+        const name = nameInput.value.trim();
+        if (!name || name.length < 2) {
+          nameInput.classList.add('error');
+          document.getElementById('error-name').classList.add('visible');
+          valid = false;
+        }
+
+        const phone = phoneInput.value.trim();
+        if (!phone || !phoneRegex.test(phone)) {
+          phoneInput.classList.add('error');
+          document.getElementById('error-phone').classList.add('visible');
+          valid = false;
+        }
+
+        return valid;
+      }
+
+      // ── Show Toast ──────────────────────────────────────────────────────
+      function showToast(type, message) {
+        toast.className = 'inquiry-toast ' + (type === 'success' ? 'success' : 'error-state');
+        toastIcon.textContent = type === 'success' ? '✅' : '⚠️';
+        toastMsg.textContent = message;
+        // Auto-hide success after 6 seconds
+        if (type === 'success') {
+          setTimeout(() => { toast.className = 'inquiry-toast'; }, 6000);
+        }
+      }
+
+      // ── Form Submit ─────────────────────────────────────────────────────
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Reset previous toast
+        toast.className = 'inquiry-toast';
+
+        if (!validate()) return;
+
+        // Loading state
+        btnInquire.disabled = true;
+        btnInquire.classList.add('loading');
+
+        const payload = {
+          product_id:  productId,
+          client_name: nameInput.value.trim(),
+          phone:       phoneInput.value.trim(),
+          message:     msgInput.value.trim() || '',
+        };
+
+        try {
+          const response = await fetch('/api/inquire', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(payload),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            showToast('success', data.message || 'Inquiry submitted! We\'ll contact you shortly.');
+            form.reset();
+          } else {
+            showToast('error', data.error || 'Something went wrong. Please try again.');
+          }
+        } catch (err) {
+          console.error('Inquiry submission error:', err);
+          showToast('error', 'Network error. Please check your connection and retry.');
+        } finally {
+          btnInquire.disabled = false;
+          btnInquire.classList.remove('loading');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

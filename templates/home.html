@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dev Laxmi Suppliers — Premium Carpets & Curtains</title>
+  <meta name="description" content="Shop handcrafted carpets and premium curtains at Dev Laxmi Suppliers. Explore our curated collection of traditional and contemporary textiles." />
+  <meta name="keywords" content="carpets, curtains, handwoven, premium textiles, Dev Laxmi Suppliers" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav" id="navbar" role="navigation" aria-label="Main navigation">
+    <a href="{{ url_for('home') }}" class="nav-brand">
+      <span class="nav-brand-title">Dev Laxmi Suppliers</span>
+      <span class="nav-brand-sub">Customer satisfaction is our priority</span>
+    </a>
+    <div style="display: flex; gap: 1.5rem; align-items: center;">
+      <a href="#carpets" style="font-weight: 600; text-transform: uppercase; font-size: 0.9rem;">Carpets</a>
+      <a href="#curtains" style="font-weight: 600; text-transform: uppercase; font-size: 0.9rem;">Curtains</a>
+      <a href="#doormats" style="font-weight: 600; text-transform: uppercase; font-size: 0.9rem;">Doormats</a>
+      <a href="#furniture" style="font-weight: 600; text-transform: uppercase; font-size: 0.9rem;">Furniture</a>
+      <a href="#location" style="font-weight: 600; text-transform: uppercase; font-size: 0.9rem;">Visit Us</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero" aria-labelledby="hero-heading">
+    <img src="{{ url_for('static', filename='images/devlaxmi_hero_banner.png') }}" alt="Luxurious Living Room" class="hero-bg" loading="lazy" />
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1 class="hero-title" id="hero-heading">Welcome Dear Customers</h1>
+      <p class="hero-sub">Discover our curated selection of premium carpets, curtains, doormats, and furniture essentials — from traditional handwoven Persian designs to sleek contemporary pieces.</p>
+      <a href="#carpets" class="btn-primary">Explore Collection</a>
+    </div>
+  </section>
+
+  <!-- Carpets Section (Dark Aesthetic) -->
+  <section id="carpets" class="section section-dark">
+    <div class="section-header">
+      <h2 class="section-title stroke-text">Carpets</h2>
+      <p class="section-desc">We offer a wide variety of premium handcrafted and machine-woven carpets to elevate your living spaces. Explore our collection of rich textures and timeless designs.</p>
+    </div>
+    
+    <div class="carousel-container">
+      <div class="carousel-track">
+        {% for product in products if product.category == 'carpet' %}
+        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="product-card">
+          <div class="card-image-wrapper">
+            {% if product.image_url %}
+              <img class="card-image" src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy" onerror="this.style.display='none';" />
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <h3 class="card-name">{{ product.name }}</h3>
+            <div class="card-price">₹{{ '{:,.0f}'.format(product.price) }}</div>
+          </div>
+        </a>
+        {% else %}
+        <div style="text-align:center; width:100%;">
+          <p>The carpet catalog will be updated soon. Please check back later.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Furniture Section -->
+  <section id="furniture" class="section section-dark">
+    <div class="section-header">
+      <h2 class="section-title stroke-text">Furniture</h2>
+      <p class="section-desc">Browse our combined chair, table, and hanger collection in one section for a simpler shopping experience.</p>
+    </div>
+
+    <div class="carousel-container">
+      <div class="carousel-track">
+        {% for product in furniture_products %}
+        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="product-card">
+          <div class="card-image-wrapper">
+            {% if product.image_url %}
+              <img class="card-image" src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy" onerror="this.style.display='none';" />
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <h3 class="card-name">{{ product.name }}</h3>
+            <div class="card-price">₹{{ '{:,.0f}'.format(product.price) }}</div>
+          </div>
+        </a>
+        {% else %}
+        <div style="text-align:center; width:100%;">
+          <p>The furniture catalog will be updated soon. Please check back later.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Curtains Section -->
+  <section id="curtains" class="section section-dark">
+    <div class="section-header">
+      <h2 class="section-title stroke-text">Curtains</h2>
+      <p class="section-desc">Enhance your windows with our luxurious curtains. From light-diffusing sheer linens to rich velvet blockouts, we have the perfect drape for any aesthetic.</p>
+    </div>
+    
+    <div class="carousel-container">
+      <div class="carousel-track">
+        {% for product in products if product.category == 'curtain' %}
+        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="product-card">
+          <div class="card-image-wrapper">
+            {% if product.image_url %}
+              <img class="card-image" src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy" onerror="this.style.display='none';" />
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <h3 class="card-name">{{ product.name }}</h3>
+            <div class="card-price">₹{{ '{:,.0f}'.format(product.price) }}</div>
+          </div>
+        </a>
+        {% else %}
+        <div style="text-align:center; width:100%;">
+          <p>The curtain catalog will be updated soon. Please check back later.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Doormats Section -->
+  <section id="doormats" class="section section-dark">
+    <div class="section-header">
+      <h2 class="section-title stroke-text">Doormats</h2>
+      <p class="section-desc">Welcome guests with our durable and stylish doormats. Crafted to withstand the elements while adding a touch of personality to your entrance.</p>
+    </div>
+    
+    <div class="carousel-container">
+      <div class="carousel-track">
+        {% for product in products if product.category == 'doormat' %}
+        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="product-card">
+          <div class="card-image-wrapper">
+            {% if product.image_url %}
+              <img class="card-image" src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy" onerror="this.style.display='none';" />
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <h3 class="card-name">{{ product.name }}</h3>
+            <div class="card-price">₹{{ '{:,.0f}'.format(product.price) }}</div>
+          </div>
+        </a>
+        {% else %}
+        <div style="text-align:center; width:100%;">
+          <p>The doormat catalog will be updated soon. Please check back later.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Location Section -->
+  <section id="location" class="section section-muted">
+    <div class="section-header">
+      <h2 class="section-title">Visit Us</h2>
+    </div>
+    <div class="location-wrapper" style="max-width: 1200px; margin: 0 auto;">
+      <div class="location-info">
+        <h3>Dev Laxmi Suppliers</h3>
+        <ul class="location-details">
+          <li>
+            <span>📍</span>
+            <span>Sallaghari, Bhaktapur</span>
+          </li>
+          <li>
+            <span>📞</span>
+            <span><a href="tel:+9779841334278" style="color: var(--primary);">+977-9841334278</a></span>
+          </li>
+          <li>
+            <span>🕐</span>
+            <span>Sun – Sat: 8:00 AM – 7:00 PM</span>
+          </li>
+        </ul>
+        <a href="https://www.google.com/maps/search/Sallaghari+Bhaktapur+Dev+Laxmi+Suppliers" target="_blank" rel="noopener noreferrer" class="btn-primary" style="margin-top: 1rem;">Get Directions</a>
+      </div>
+      <div class="map-container">
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d220.84446979665458!2d85.41025634161669!3d27.6705811361518!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb1a9a4bc735d9%3A0xd37f8690858b968b!2sDev%20Laxmi%20Suppliers!5e0!3m2!1sen!2snp!4v1780728408455!5m2!1sen!2snp"
+          allowfullscreen=""
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          title="Dev Laxmi Suppliers - Shop Location"
+        ></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer-grid" style="max-width: 1200px; margin: 0 auto;">
+      <div class="footer-col">
+        <div class="nav-brand" style="margin-bottom: 1.5rem;">
+          <span class="nav-brand-title" style="color: var(--text-light);">Dev Laxmi Suppliers</span>
+        </div>
+        <p style="opacity: 0.8; font-size: 0.9rem; max-width: 300px;">
+          Customer satisfaction is our priority.
+        </p>
+      </div>
+      <div class="footer-col">
+        <h4>Links</h4>
+        <ul>
+          <li><a href="#carpets">Carpets</a></li>
+          <li><a href="#curtains">Curtains</a></li>
+          <li><a href="#doormats">Doormats</a></li>
+          <li><a href="#furniture">Furniture</a></li>
+          <li><a href="#location">Visit Us</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact Us</h4>
+        <ul>
+          <li style="display: flex; gap: 0.5rem; opacity: 0.8;">
+            <span>📍</span>
+            <span>Sallaghari, Bhaktapur</span>
+          </li>
+          <li style="display: flex; gap: 0.5rem; opacity: 0.8;">
+            <span>📞</span>
+            <span>+977-9841334278</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      Copyright © <script>document.write(new Date().getFullYear())</script> Dev Laxmi Suppliers. All rights reserved.
+    </div>
+  </footer>
+
+  <a
+    class="whatsapp-fab"
+    href="https://wa.me/9779841334278?text=%E0%A4%A8%E0%A4%AE%E0%A4%B8%E0%A5%8D%E0%A4%A4%E0%A5%87%20Dev%20Laxmi%20Suppliers%2C%20%E0%A4%AE%E0%A4%B2%E0%A4%BE%E0%A4%88%20%E0%A4%A4%E0%A4%AA%E0%A4%BE%E0%A4%88%E0%A4%81%E0%A4%95%E0%A5%8B%20%E0%A4%AC%E0%A4%BF%E0%A4%95%E0%A5%8D%E0%A4%B0%E0%A5%80%E0%A4%95%E0%A5%8B%20%E0%A4%B8%E0%A4%BE%E0%A4%AE%E0%A4%BE%E0%A4%A8%20%E0%A4%AC%E0%A4%BE%E0%A4%B0%E0%A5%87%20%E0%A4%9A%E0%A4%BE%E0%A4%9F%20%E0%A4%97%E0%A4%B0%E0%A5%8D%E0%A4%A8%20%E0%A4%9A%E0%A4%BE%E0%A4%B9%E0%A4%A8%E0%A5%8D%E0%A4%9B%E0%A5%81."
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Chat on WhatsApp"
+  >
+    <span class="whatsapp-popup">
+      <strong>Chat on WhatsApp</strong>
+      <span>+977 9841334278</span>
+    </span>
+    <span class="whatsapp-icon" aria-hidden="true">
+      <svg viewBox="0 0 32 32" role="img" focusable="false" aria-hidden="true">
+        <path fill="currentColor" d="M19.11 17.14c-.27-.14-1.61-.79-1.86-.88-.25-.09-.43-.14-.61.14-.18.27-.7.88-.86 1.06-.16.18-.32.2-.59.07-.27-.14-1.15-.42-2.2-1.35-.82-.73-1.37-1.63-1.53-1.9-.16-.27-.02-.42.12-.56.12-.12.27-.32.41-.48.14-.16.18-.27.27-.45.09-.18.05-.34-.02-.48-.07-.14-.61-1.48-.84-2.02-.22-.54-.45-.47-.61-.48h-.52c-.18 0-.48.07-.73.34-.25.27-.96.94-.96 2.28 0 1.34.98 2.64 1.11 2.82.14.18 1.92 2.94 4.65 4.12.65.28 1.16.45 1.56.58.65.21 1.24.18 1.71.11.52-.08 1.61-.66 1.84-1.3.23-.64.23-1.19.16-1.3-.07-.11-.25-.18-.52-.32z"/>
+        <path fill="currentColor" d="M16.03 3C9.39 3 4 8.39 4 15.03c0 2.12.56 4.21 1.62 6.05L4 29l8.16-1.58a11.95 11.95 0 0 0 5.87 1.5h.01C24.62 28.92 30 23.54 30 16.9 30 10.26 24.67 3 16.03 3zm0 22.9h-.01a9.92 9.92 0 0 1-5.06-1.39l-.36-.21-4.84.94.97-4.73-.23-.38a9.93 9.93 0 0 1-1.52-5.27c0-5.47 4.45-9.92 9.92-9.92 5.47 0 9.92 4.45 9.92 9.92 0 5.47-4.45 10.04-9.79 10.04z"/>
+      </svg>
+    </span>
+  </a>
+
+  <script>
+    // Sticky Navbar Transition on Scroll
+    window.addEventListener('scroll', () => {
+      const nav = document.getElementById('navbar');
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
+  </script>
+</body>
+</html>

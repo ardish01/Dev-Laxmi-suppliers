@@ -1,0 +1,490 @@
+/* =====================================================================
+   CSS Reset & Custom Properties (Yeti Carpet Inspired Aesthetic)
+===================================================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Colors */
+  --primary:        #FF8800; /* Vibrant Orange/Gold Accent */
+  --primary-light:  #FF9933;
+  --primary-dark:   #CC6D00;
+  
+  --bg-dark:        #09314f; /* Navy Blue used in Footer/Sections */
+  --bg-darker:      #062338;
+  --bg-light:       #ffffff;
+  --bg-muted:       #f4f6f8;
+  
+  --text-dark:      #1a1a1a;
+  --text-light:     #ffffff;
+  --text-muted:     #8898aa;
+  
+  --border-light:   rgba(255, 255, 255, 0.1);
+  --border-dark:    rgba(0, 0, 0, 0.1);
+  
+  /* Layout */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   16px;
+  --shadow-card: 0 10px 30px rgba(0,0,0,0.08);
+  --shadow-hover:0 20px 40px rgba(0,0,0,0.15);
+  --transition:  0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg-light);
+  color: var(--text-dark);
+  min-height: 100vh;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition);
+}
+
+/* =====================================================================
+   Scrollbar
+===================================================================== */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-muted); }
+::-webkit-scrollbar-thumb { background: rgba(9, 49, 79, 0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+/* =====================================================================
+   Navigation (Sticky & Transparent)
+===================================================================== */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem clamp(1rem, 4vw, 4rem);
+  transition: all 0.4s ease;
+  background: transparent;
+  color: var(--text-light);
+}
+
+.nav.scrolled {
+  background: var(--bg-light);
+  color: var(--bg-dark);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  padding: 0.8rem clamp(1rem, 4vw, 4rem);
+}
+
+.nav-brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.nav-brand-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: inherit;
+}
+
+.nav.scrolled .nav-brand-title {
+  color: var(--bg-dark);
+}
+
+.nav-brand-sub {
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* =====================================================================
+   Hero Section
+===================================================================== */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-light);
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 40%, rgba(9,49,79,0.8) 100%);
+  z-index: -1;
+}
+
+.hero-content {
+  max-width: 800px;
+  padding: 0 2rem;
+  animation: fadeInUp 1s ease both;
+}
+
+.hero-title {
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: 1rem;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.hero-sub {
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  font-weight: 300;
+  margin-bottom: 2.5rem;
+  opacity: 0.9;
+}
+
+.btn-primary {
+  display: inline-block;
+  background: var(--primary);
+  color: var(--text-light);
+  padding: 1rem 2.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 100px;
+  border: 2px solid var(--primary);
+  transition: var(--transition);
+}
+
+.btn-primary:hover {
+  background: transparent;
+  color: var(--primary);
+}
+
+/* =====================================================================
+   Sections
+===================================================================== */
+.section {
+  padding: 6rem clamp(1rem, 4vw, 4rem);
+  position: relative;
+}
+
+.section-dark {
+  background: var(--bg-dark);
+  color: var(--text-light);
+}
+
+.section-light {
+  background: var(--bg-light);
+  color: var(--text-dark);
+}
+
+.section-muted {
+  background: var(--bg-muted);
+  color: var(--text-dark);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.section-title {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  position: relative;
+  display: inline-block;
+}
+
+/* Text Stroke effect similar to Yeti Carpet */
+.section-dark .section-title.stroke-text {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--primary);
+}
+
+.section-light .section-title.stroke-text {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--bg-dark);
+}
+
+.section-desc {
+  max-width: 800px;
+  margin: 1.5rem auto 0;
+  font-size: 1.1rem;
+  color: inherit;
+  opacity: 0.8;
+}
+
+/* =====================================================================
+   Carousel Grid
+===================================================================== */
+.carousel-container {
+  position: relative;
+  width: 100%;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 2rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 2rem;
+  scrollbar-width: none; /* Firefox */
+}
+
+.carousel-track::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.product-card {
+  flex: 0 0 calc(80vw);
+  max-width: 400px;
+  scroll-snap-align: center;
+  background: var(--bg-light);
+  border-radius: 0; /* Yeti style sharp corners */
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: var(--transition);
+  color: var(--text-dark);
+}
+
+@media (min-width: 768px) {
+  .product-card {
+    flex: 0 0 calc(40vw);
+  }
+}
+
+@media (min-width: 1024px) {
+  .product-card {
+    flex: 0 0 calc(25vw);
+    max-width: 350px;
+  }
+}
+
+.product-card:hover {
+  transform: translateY(-10px);
+  box-shadow: var(--shadow-hover);
+}
+
+.card-image-wrapper {
+  position: relative;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.product-card:hover .card-image {
+  transform: scale(1.1);
+}
+
+.card-body {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.card-name {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--bg-dark);
+}
+
+.card-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* =====================================================================
+   Location Section
+===================================================================== */
+.location-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+@media (min-width: 992px) {
+  .location-wrapper {
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+  }
+}
+
+.map-container {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.map-container iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.location-info h3 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: var(--bg-dark);
+}
+
+.location-details {
+  list-style: none;
+  font-size: 1.1rem;
+}
+
+.location-details li {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+/* =====================================================================
+   Footer
+===================================================================== */
+.footer {
+  background: var(--bg-dark);
+  color: var(--text-light);
+  padding: 4rem clamp(1rem, 4vw, 4rem) 2rem;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  margin-bottom: 3rem;
+}
+
+@media (min-width: 768px) {
+  .footer-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.footer-col h4 {
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+  color: var(--primary);
+}
+
+.footer-col ul {
+  list-style: none;
+}
+
+.footer-col ul li {
+  margin-bottom: 0.8rem;
+}
+
+.footer-col ul li a {
+  opacity: 0.8;
+}
+
+.footer-col ul li a:hover {
+  opacity: 1;
+  color: var(--primary);
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+
+/* =====================================================================
+   WhatsApp Floating Button
+===================================================================== */
+.whatsapp-fab {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 1200;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.whatsapp-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-md);
+  background: #25d366;
+  color: #fff;
+  box-shadow: var(--shadow-card);
+  font-size: 0.9rem;
+  line-height: 1.1;
+}
+
+.whatsapp-popup strong {
+  font-size: 0.95rem;
+}
+
+.whatsapp-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #25d366;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: var(--shadow-hover);
+}
+
+.whatsapp-icon svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+.whatsapp-fab:hover .whatsapp-popup,
+.whatsapp-fab:hover .whatsapp-icon {
+  transform: translateY(-2px);
+}
+
+/* =====================================================================
+   Animations
+===================================================================== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
