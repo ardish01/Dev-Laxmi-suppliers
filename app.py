@@ -82,8 +82,6 @@ DB_CONFIG = {
     "dbname":   os.getenv("DB_NAME", "devlaxmi_db"),
 }
 
-DB_NAME = os.getenv("DB_NAME", "devlaxmi_db")
-
 # ── Database Connection Pool ──────────────────────────────────────────────────
 _pool: psycopg2.pool.ThreadedConnectionPool | None = None
 
@@ -115,32 +113,13 @@ def release_db(conn) -> None:
 DEMO_PRODUCTS = []
 
 
-def _create_database_if_missing() -> None:
-    """
-    Connect to the default 'postgres' database and create DB_NAME if absent.
-    Must run outside a transaction (autocommit=True).
-    """
-    admin_cfg = {**DB_CONFIG, "dbname": "postgres"}
-    conn = psycopg2.connect(**admin_cfg)
-    conn.autocommit = True
-    cur = conn.cursor()
-    cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (DB_NAME,))
-    if not cur.fetchone():
-        cur.execute(f'CREATE DATABASE "{DB_NAME}" ENCODING \'UTF8\'')
-        log.info("Database '%s' created.", DB_NAME)
-    else:
-        log.info("Database '%s' already exists.", DB_NAME)
-    cur.close()
-    conn.close()
-
-
 def init_database() -> None:
     """
-    Ensure the database, tables, and seed data exist.
+    Ensure tables and seed data exist.
     Called once at application startup.
+    The database itself is assumed to already exist (e.g. provisioned by Render).
     """
     _ensure_upload_folder()
-    _create_database_if_missing()
 
     conn = psycopg2.connect(**DB_CONFIG)
     conn.autocommit = True
