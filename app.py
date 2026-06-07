@@ -142,7 +142,21 @@ def init_database() -> None:
         )
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_products_brand    ON products(brand)")
+
+    # Add brand column if upgrading from an older schema — must run before the brand index
+    cur.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name='products' AND column_name='brand'
+            ) THEN
+                ALTER TABLE products ADD COLUMN brand VARCHAR(100) NOT NULL DEFAULT 'Unknown';
+            END IF;
+        END;
+        $$
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand)")
 
     # Trigger to keep updated_at current (equivalent to ON UPDATE CURRENT_TIMESTAMP)
     cur.execute("""
@@ -164,21 +178,6 @@ def init_database() -> None:
                 CREATE TRIGGER trg_products_updated_at
                 BEFORE UPDATE ON products
                 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-            END IF;
-        END;
-        $$
-    """)
-
-    # Add brand column if upgrading from an older schema
-    cur.execute("""
-        DO $$
-        BEGIN
-            IF NOT EXISTS (
-                SELECT 1 FROM information_schema.columns
-                WHERE table_name='products' AND column_name='brand'
-            ) THEN
-                ALTER TABLE products ADD COLUMN brand VARCHAR(100) NOT NULL DEFAULT 'Unknown';
-                CREATE INDEX idx_products_brand ON products(brand);
             END IF;
         END;
         $$
