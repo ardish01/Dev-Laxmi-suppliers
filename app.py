@@ -27,10 +27,8 @@ from dotenv import load_dotenv
 # ── Optional psycopg2 import ──────────────────────────────────────────────────
 try:
     import psycopg2
-    import psycopg2.extras          # RealDictCursor
-    import psycopg2.pool
-    import psycopg2.errors
-    from psycopg2 import OperationalError as PGOperationalError
+    import psycopg2.extras
+    from psycopg2.extras import RealDictCursor
 except ImportError as exc:
     raise RuntimeError(
         "psycopg2 is required. Run: pip install psycopg2-binary"
@@ -73,40 +71,16 @@ def _allowed_image_filename(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
 
 
-# ── Database Configuration ────────────────────────────────────────────────────
-DB_CONFIG = {
-    "host":     os.getenv("DB_HOST", "localhost"),
-    "port":     int(os.getenv("DB_PORT", 5432)),
-    "user":     os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("DB_PASSWORD", ""),
-    "dbname":   os.getenv("DB_NAME", "devlaxmi_db"),
-}
-
-# ── Database Connection Pool ──────────────────────────────────────────────────
-_pool: psycopg2.pool.ThreadedConnectionPool | None = None
-
-
-def get_pool() -> psycopg2.pool.ThreadedConnectionPool:
-    """Return (or lazily create) the PostgreSQL connection pool."""
-    global _pool
-    if _pool is None:
-        _pool = psycopg2.pool.ThreadedConnectionPool(
-            minconn=1,
-            maxconn=5,
-            **DB_CONFIG,
-        )
-        log.info("PostgreSQL connection pool created (maxconn=5).")
-    return _pool
-
-
+# ── Database Connection ───────────────────────────────────────────────────────
 def get_db():
-    """Get a connection from the pool."""
-    return get_pool().getconn()
-
-
-def release_db(conn) -> None:
-    """Return a connection to the pool."""
-    get_pool().putconn(conn)
+    """Open and return a new PostgreSQL connection."""
+    return psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT", 5432),
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+    )
 
 
 # ── Database Initialization ───────────────────────────────────────────────────
@@ -121,7 +95,7 @@ def init_database() -> None:
     """
     _ensure_upload_folder()
 
-    conn = psycopg2.connect(**DB_CONFIG)
+    conn = get_db()
     conn.autocommit = True
     cur = conn.cursor()
 
@@ -312,7 +286,7 @@ def _fetch_products_by_ids(ids: list[int]) -> list[dict]:
         rows = [dict(r) for r in cur.fetchall()]
         cur.close()
     finally:
-        release_db(conn)
+        conn.close()
     order = {pid: i for i, pid in enumerate(ids)}
     rows.sort(key=lambda r: order.get(r["id"], 999))
     return rows
@@ -328,7 +302,7 @@ def _fetch_random_products(category: str, limit: int, exclude_id: int = 0) -> li
         rows = [dict(r) for r in cur.fetchall()]
         cur.close()
     finally:
-        release_db(conn)
+        conn.close()
     return rows
 
 
@@ -393,7 +367,7 @@ def home():
 
         cur.close()
     finally:
-        release_db(conn)
+        conn.close()
 
     return render_template(
         "home.html",
@@ -421,7 +395,7 @@ def product_detail(product_id: int):
         product = dict(product) if product else None
         cur.close()
     finally:
-        release_db(conn)
+        conn.close()
 
     if not product:
         abort(404)
@@ -479,7 +453,7 @@ def api_inquire():
         conn.commit()
         cur.close()
     finally:
-        release_db(conn)
+        conn.close()
 
     log.info("New inquiry from '%s' (%s) for product #%d.", client_name, phone, product_id)
     return jsonify({"success": True, "message": "Your inquiry has been received. We'll contact you shortly!"}), 201
@@ -552,7 +526,7 @@ def admin_dashboard():
         stats_cur.close()
         cur.close()
     finally:
-        release_db(conn)
+        conn.close()
 
     return render_template(
         "admin.html",
@@ -627,7 +601,7 @@ def api_admin_create_product():
         conn.commit()
         cur.close()
     finally:
-        release_db(conn)
+        conn.close()
 
     reload_reco_model()
 
@@ -655,7 +629,7 @@ def api_admin_delete_product(product_id: int):
         conn.commit()
         cur.close()
     finally:
-        release_db(conn)
+        conn.close()
 
     reload_reco_model()
     return jsonify({"success": True, "message": "Product deleted."}), 200
@@ -677,7 +651,7 @@ def api_admin_get_inquiries():
         rows = [dict(r) for r in cur.fetchall()]
         cur.close()
     finally:
-        release_db(conn)
+        conn.close()
 
     for row in rows:
         if isinstance(row.get("created_at"), datetime):
