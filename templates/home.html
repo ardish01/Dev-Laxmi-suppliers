@@ -19,12 +19,21 @@
       <span class="nav-brand-title">Dev Laxmi Suppliers</span>
       <span class="nav-brand-sub">Customer satisfaction is our priority</span>
     </a>
-    <div style="display: flex; gap: 1.5rem; align-items: center;">
-      <a href="#carpets" style="font-weight: 600; text-transform: uppercase; font-size: 0.9rem;">Carpets</a>
-      <a href="#curtains" style="font-weight: 600; text-transform: uppercase; font-size: 0.9rem;">Curtains</a>
-      <a href="#doormats" style="font-weight: 600; text-transform: uppercase; font-size: 0.9rem;">Doormats</a>
-      <a href="#furniture" style="font-weight: 600; text-transform: uppercase; font-size: 0.9rem;">Furniture</a>
-      <a href="#location" style="font-weight: 600; text-transform: uppercase; font-size: 0.9rem;">Visit Us</a>
+
+    <!-- Hamburger Button (mobile only) -->
+    <button class="nav-hamburger" id="navHamburger" aria-label="Toggle menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <!-- Nav Links -->
+    <div class="nav-links" id="navLinks">
+      <a href="#carpets">Carpets</a>
+      <a href="#curtains">Curtains</a>
+      <a href="#doormats">Doormats</a>
+      <a href="#furniture">Furniture</a>
+      <a href="#location">Visit Us</a>
     </div>
   </nav>
 
@@ -263,6 +272,25 @@
       } else {
         nav.classList.remove('scrolled');
       }
+    });
+
+    // Hamburger Menu Toggle
+    const hamburger = document.getElementById('navHamburger');
+    const navLinks = document.getElementById('navLinks');
+
+    hamburger.addEventListener('click', () => {
+      const isOpen = navLinks.classList.toggle('open');
+      hamburger.classList.toggle('open', isOpen);
+      hamburger.setAttribute('aria-expanded', isOpen);
+    });
+
+    // Close menu when a link is clicked
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.classList.remove('open');
+        hamburger.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', false);
+      });
     });
   </script>
 </body>
