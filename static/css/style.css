@@ -8,19 +8,19 @@
   --primary:        #FF8800;
   --primary-light:  #FF9933;
   --primary-dark:   #CC6D00;
-  
+
   --bg-dark:        #09314f;
   --bg-darker:      #062338;
   --bg-light:       #ffffff;
   --bg-muted:       #f4f6f8;
-  
+
   --text-dark:      #1a1a1a;
   --text-light:     #ffffff;
   --text-muted:     #8898aa;
-  
+
   --border-light:   rgba(255, 255, 255, 0.1);
   --border-dark:    rgba(0, 0, 0, 0.1);
-  
+
   /* Layout */
   --radius-sm:   4px;
   --radius-md:   8px;
@@ -64,7 +64,7 @@ a {
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
 /* =====================================================================
-   Navigation
+   Navigation — Mobile-first
 ===================================================================== */
 .nav {
   position: fixed;
@@ -75,17 +75,29 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem clamp(1rem, 4vw, 4rem);
+  padding: 0.75rem 1rem;
   transition: all 0.4s ease;
   background: transparent;
   color: var(--text-light);
+}
+
+@media (min-width: 768px) {
+  .nav {
+    padding: 1rem clamp(1rem, 4vw, 4rem);
+  }
 }
 
 .nav.scrolled {
   background: var(--bg-light);
   color: var(--bg-dark);
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-  padding: 0.8rem clamp(1rem, 4vw, 4rem);
+  padding: 0.6rem 1rem;
+}
+
+@media (min-width: 768px) {
+  .nav.scrolled {
+    padding: 0.8rem clamp(1rem, 4vw, 4rem);
+  }
 }
 
 .nav-brand {
@@ -95,11 +107,17 @@ a {
 }
 
 .nav-brand-title {
-  font-size: clamp(1rem, 3.5vw, 1.5rem);
+  font-size: 1.1rem;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: inherit;
+}
+
+@media (min-width: 768px) {
+  .nav-brand-title {
+    font-size: 1.5rem;
+  }
 }
 
 .nav.scrolled .nav-brand-title {
@@ -107,18 +125,30 @@ a {
 }
 
 .nav-brand-sub {
-  font-size: clamp(0.55rem, 1.5vw, 0.7rem);
+  font-size: 0.6rem;
   font-weight: 400;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   opacity: 0.8;
 }
 
-/* Desktop nav links */
+@media (min-width: 768px) {
+  .nav-brand-sub {
+    font-size: 0.7rem;
+  }
+}
+
+/* Mobile nav links — hamburger menu */
 .nav-links {
-  display: flex;
-  gap: 1.5rem;
-  align-items: center;
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
 }
 
 .nav-links a {
@@ -126,84 +156,79 @@ a {
   text-transform: uppercase;
   font-size: 0.9rem;
   color: inherit;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+  transition: var(--transition);
 }
 
 .nav-links a:hover {
+  opacity: 1;
   color: var(--primary);
 }
 
-/* Hamburger button — hidden on desktop */
+/* Hamburger button — mobile only */
 .nav-hamburger {
-  display: none;
+  display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 5px;
-  width: 36px;
-  height: 36px;
+  cursor: pointer;
   background: none;
   border: none;
-  cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   z-index: 1100;
+}
+
+@media (min-width: 768px) {
+  .nav-hamburger {
+    display: none;
+  }
 }
 
 .nav-hamburger span {
   display: block;
-  width: 100%;
+  width: 24px;
   height: 2px;
   background: currentColor;
   border-radius: 2px;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: var(--transition);
 }
 
-/* Animated X when open */
 .nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .nav-hamburger.open span:nth-child(2) { opacity: 0; }
 .nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-/* =====================================================================
-   Mobile Navigation
-===================================================================== */
-@media (max-width: 767px) {
-  .nav-hamburger {
-    display: flex;
-  }
-
-  .nav-links {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--bg-dark);
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 2rem;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(-10px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    z-index: 1050;
-  }
-
-  .nav-links.open {
-    opacity: 1;
-    pointer-events: all;
-    transform: translateY(0);
-  }
-
-  .nav-links a {
-    font-size: 1.4rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--text-light);
-  }
-
-  .nav-links a:hover {
-    color: var(--primary);
-  }
+/* Mobile drawer */
+.nav-drawer {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg-dark);
+  z-index: 999;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
 }
+
+.nav-drawer.open {
+  display: flex;
+  animation: fadeInUp 0.3s ease;
+}
+
+@media (min-width: 768px) {
+  .nav-drawer { display: none !important; }
+}
+
+.nav-drawer a {
+  color: var(--text-light);
+  font-size: 1.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: color 0.2s;
+}
+
+.nav-drawer a:hover { color: var(--primary); }
 
 /* =====================================================================
    Hero Section
@@ -238,8 +263,14 @@ a {
 
 .hero-content {
   max-width: 800px;
-  padding: 0 1.5rem;
+  padding: 0 1.25rem;
   animation: fadeInUp 1s ease both;
+}
+
+@media (min-width: 768px) {
+  .hero-content {
+    padding: 0 2rem;
+  }
 }
 
 .hero-title {
@@ -262,13 +293,20 @@ a {
   background: var(--primary);
   color: var(--text-light);
   padding: 0.85rem 2rem;
-  font-size: clamp(0.85rem, 2vw, 1rem);
+  font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   border-radius: 100px;
   border: 2px solid var(--primary);
   transition: var(--transition);
+}
+
+@media (min-width: 768px) {
+  .btn-primary {
+    padding: 1rem 2.5rem;
+    font-size: 1rem;
+  }
 }
 
 .btn-primary:hover {
@@ -280,8 +318,14 @@ a {
    Sections
 ===================================================================== */
 .section {
-  padding: clamp(3rem, 8vw, 6rem) clamp(1rem, 4vw, 4rem);
+  padding: 4rem 1.25rem;
   position: relative;
+}
+
+@media (min-width: 768px) {
+  .section {
+    padding: 6rem clamp(1rem, 4vw, 4rem);
+  }
 }
 
 .section-dark {
@@ -301,7 +345,13 @@ a {
 
 .section-header {
   text-align: center;
-  margin-bottom: clamp(2rem, 5vw, 4rem);
+  margin-bottom: 2.5rem;
+}
+
+@media (min-width: 768px) {
+  .section-header {
+    margin-bottom: 4rem;
+  }
 }
 
 .section-title {
@@ -312,6 +362,7 @@ a {
   display: inline-block;
 }
 
+/* Text Stroke effect */
 .section-dark .section-title.stroke-text {
   color: transparent;
   -webkit-text-stroke: 1px var(--primary);
@@ -325,14 +376,21 @@ a {
 .section-desc {
   max-width: 800px;
   margin: 1rem auto 0;
-  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  font-size: 0.95rem;
   color: inherit;
   opacity: 0.8;
   padding: 0 0.5rem;
 }
 
+@media (min-width: 768px) {
+  .section-desc {
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+  }
+}
+
 /* =====================================================================
-   Carousel / Product Cards
+   Carousel Grid
 ===================================================================== */
 .carousel-container {
   position: relative;
@@ -345,8 +403,18 @@ a {
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   padding-bottom: 1.5rem;
-  padding-left: 0.25rem;
   scrollbar-width: none;
+  /* Add visible scroll hint on mobile via padding */
+  padding-left: 0;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .carousel-track {
+    gap: 2rem;
+    padding-bottom: 2rem;
+    padding-right: 0;
+  }
 }
 
 .carousel-track::-webkit-scrollbar {
@@ -354,9 +422,9 @@ a {
 }
 
 .product-card {
-  flex: 0 0 80vw;
-  max-width: 320px;
-  scroll-snap-align: center;
+  flex: 0 0 72vw;
+  max-width: 280px;
+  scroll-snap-align: start;
   background: var(--bg-light);
   border-radius: 0;
   overflow: hidden;
@@ -367,35 +435,27 @@ a {
 
 @media (min-width: 480px) {
   .product-card {
-    flex: 0 0 65vw;
-    max-width: 360px;
+    flex: 0 0 55vw;
+    max-width: 320px;
   }
 }
 
 @media (min-width: 768px) {
   .product-card {
-    flex: 0 0 42vw;
+    flex: 0 0 calc(40vw);
     max-width: 380px;
-  }
-
-  .carousel-track {
-    gap: 1.75rem;
   }
 }
 
 @media (min-width: 1024px) {
   .product-card {
-    flex: 0 0 25vw;
+    flex: 0 0 calc(25vw);
     max-width: 350px;
-  }
-
-  .carousel-track {
-    gap: 2rem;
   }
 }
 
 .product-card:hover {
-  transform: translateY(-8px);
+  transform: translateY(-6px);
   box-shadow: var(--shadow-hover);
 }
 
@@ -414,22 +474,34 @@ a {
 }
 
 .product-card:hover .card-image {
-  transform: scale(1.08);
+  transform: scale(1.1);
 }
 
 .card-body {
-  padding: 1.25rem;
+  padding: 1rem 1.25rem;
   text-align: center;
 }
 
+@media (min-width: 768px) {
+  .card-body {
+    padding: 1.5rem;
+  }
+}
+
 .card-name {
-  font-size: clamp(1rem, 2.5vw, 1.25rem);
-  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
   color: var(--bg-dark);
 }
 
+@media (min-width: 768px) {
+  .card-name {
+    font-size: 1.25rem;
+  }
+}
+
 .card-price {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--primary);
 }
@@ -442,6 +514,8 @@ a {
   grid-template-columns: 1fr;
   gap: 2rem;
   align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 @media (min-width: 992px) {
@@ -466,14 +540,27 @@ a {
 }
 
 .location-info h3 {
-  font-size: clamp(1.4rem, 4vw, 2rem);
-  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  margin-bottom: 1.25rem;
   color: var(--bg-dark);
+}
+
+@media (min-width: 768px) {
+  .location-info h3 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
 }
 
 .location-details {
   list-style: none;
-  font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+  font-size: 1rem;
+}
+
+@media (min-width: 768px) {
+  .location-details {
+    font-size: 1.1rem;
+  }
 }
 
 .location-details li {
@@ -489,7 +576,13 @@ a {
 .footer {
   background: var(--bg-dark);
   color: var(--text-light);
-  padding: clamp(2.5rem, 6vw, 4rem) clamp(1rem, 4vw, 4rem) 2rem;
+  padding: 3rem 1.25rem 2rem;
+}
+
+@media (min-width: 768px) {
+  .footer {
+    padding: 4rem clamp(1rem, 4vw, 4rem) 2rem;
+  }
 }
 
 .footer-grid {
@@ -497,12 +590,9 @@ a {
   grid-template-columns: 1fr;
   gap: 2rem;
   margin-bottom: 2rem;
-}
-
-@media (min-width: 600px) {
-  .footer-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 @media (min-width: 768px) {
@@ -514,9 +604,16 @@ a {
 }
 
 .footer-col h4 {
-  font-size: 1.1rem;
-  margin-bottom: 1.2rem;
+  font-size: 1rem;
+  margin-bottom: 1rem;
   color: var(--primary);
+}
+
+@media (min-width: 768px) {
+  .footer-col h4 {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
 }
 
 .footer-col ul {
@@ -524,7 +621,13 @@ a {
 }
 
 .footer-col ul li {
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.6rem;
+}
+
+@media (min-width: 768px) {
+  .footer-col ul li {
+    margin-bottom: 0.8rem;
+  }
 }
 
 .footer-col ul li a {
@@ -554,41 +657,44 @@ a {
   z-index: 1200;
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-/* Hide popup label on small screens, show only icon */
+@media (min-width: 768px) {
+  .whatsapp-fab {
+    right: 1.25rem;
+    bottom: 1.25rem;
+    gap: 0.75rem;
+  }
+}
+
+/* Hide text popup on mobile to avoid clutter */
 .whatsapp-popup {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 0.15rem;
-  padding: 0.7rem 0.9rem;
+  padding: 0.8rem 1rem;
   border-radius: var(--radius-md);
   background: #25d366;
   color: #fff;
   box-shadow: var(--shadow-card);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   line-height: 1.1;
 }
 
-@media (max-width: 480px) {
+@media (min-width: 768px) {
   .whatsapp-popup {
-    display: none;
-  }
-
-  .whatsapp-fab {
-    right: 0.75rem;
-    bottom: 0.75rem;
+    display: flex;
   }
 }
 
 .whatsapp-popup strong {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .whatsapp-icon {
-  width: 52px;
-  height: 52px;
+  width: 50px;
+  height: 50px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -596,13 +702,26 @@ a {
   color: #fff;
   font-weight: 700;
   box-shadow: var(--shadow-hover);
-  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .whatsapp-icon {
+    width: 56px;
+    height: 56px;
+  }
 }
 
 .whatsapp-icon svg {
   width: 26px;
   height: 26px;
   display: block;
+}
+
+@media (min-width: 768px) {
+  .whatsapp-icon svg {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 .whatsapp-fab:hover .whatsapp-popup,
