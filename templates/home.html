@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
-<link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
-<link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
-<link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dev Laxmi Suppliers — Premium Carpets & Curtains</title>
@@ -25,7 +25,6 @@
       <span class="nav-brand-sub">Customer satisfaction is our priority</span>
     </a>
 
-    <!-- Desktop links (hidden on mobile, shown on tablet+ via CSS) -->
     <div class="nav-links">
       <a href="#carpets">Carpets</a>
       <a href="#curtains">Curtains</a>
@@ -34,7 +33,6 @@
       <a href="#location">Visit Us</a>
     </div>
 
-    <!-- Hamburger button — mobile only -->
     <button class="nav-hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
       <span></span>
       <span></span>
@@ -62,13 +60,12 @@
     </div>
   </section>
 
-  <!-- Carpets Section (Dark Aesthetic) -->
+  <!-- Carpets Section -->
   <section id="carpets" class="section section-dark">
     <div class="section-header">
       <h2 class="section-title stroke-text">Carpets</h2>
       <p class="section-desc">We offer a wide variety of premium handcrafted and machine-woven carpets to elevate your living spaces. Explore our collection of rich textures and timeless designs.</p>
     </div>
-    
     <div class="carousel-container">
       <div class="carousel-track">
         {% for product in products if product.category == 'carpet' %}
@@ -80,7 +77,7 @@
           </div>
           <div class="card-body">
             <h3 class="card-name">{{ product.name }}</h3>
-            <div class="card-price">₹{{ '{:,.0f}'.format(product.price) }}</div>
+            <div class="card-price">Rs. {{ '{:,.0f}'.format(product.price) }}</div>
           </div>
         </a>
         {% else %}
@@ -98,7 +95,6 @@
       <h2 class="section-title stroke-text">Furniture</h2>
       <p class="section-desc">Browse our combined chair, table, and hanger collection in one section for a simpler shopping experience.</p>
     </div>
-
     <div class="carousel-container">
       <div class="carousel-track">
         {% for product in furniture_products %}
@@ -110,7 +106,7 @@
           </div>
           <div class="card-body">
             <h3 class="card-name">{{ product.name }}</h3>
-            <div class="card-price">₹{{ '{:,.0f}'.format(product.price) }}</div>
+            <div class="card-price">Rs. {{ '{:,.0f}'.format(product.price) }}</div>
           </div>
         </a>
         {% else %}
@@ -128,7 +124,6 @@
       <h2 class="section-title stroke-text">Curtains</h2>
       <p class="section-desc">Enhance your windows with our luxurious curtains. From light-diffusing sheer linens to rich velvet blockouts, we have the perfect drape for any aesthetic.</p>
     </div>
-    
     <div class="carousel-container">
       <div class="carousel-track">
         {% for product in products if product.category == 'curtain' %}
@@ -140,7 +135,7 @@
           </div>
           <div class="card-body">
             <h3 class="card-name">{{ product.name }}</h3>
-            <div class="card-price">₹{{ '{:,.0f}'.format(product.price) }}</div>
+            <div class="card-price">Rs. {{ '{:,.0f}'.format(product.price) }}</div>
           </div>
         </a>
         {% else %}
@@ -158,7 +153,6 @@
       <h2 class="section-title stroke-text">Doormats</h2>
       <p class="section-desc">Welcome guests with our durable and stylish doormats. Crafted to withstand the elements while adding a touch of personality to your entrance.</p>
     </div>
-    
     <div class="carousel-container">
       <div class="carousel-track">
         {% for product in products if product.category == 'doormat' %}
@@ -170,7 +164,7 @@
           </div>
           <div class="card-body">
             <h3 class="card-name">{{ product.name }}</h3>
-            <div class="card-price">₹{{ '{:,.0f}'.format(product.price) }}</div>
+            <div class="card-price">Rs. {{ '{:,.0f}'.format(product.price) }}</div>
           </div>
         </a>
         {% else %}
@@ -278,7 +272,6 @@
   </a>
 
   <script>
-    // Sticky Navbar Transition on Scroll
     window.addEventListener('scroll', () => {
       const nav = document.getElementById('navbar');
       if (window.scrollY > 50) {
@@ -288,7 +281,6 @@
       }
     });
 
-    // Hamburger menu toggle
     const hamburger = document.getElementById('hamburger');
     const drawer = document.getElementById('nav-drawer');
 
@@ -299,7 +291,6 @@
       document.body.style.overflow = isOpen ? 'hidden' : '';
     });
 
-    // Close drawer when a link is clicked
     drawer.querySelectorAll('.drawer-link').forEach(link => {
       link.addEventListener('click', () => {
         drawer.classList.remove('open');
