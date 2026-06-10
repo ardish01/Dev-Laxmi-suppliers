@@ -15,6 +15,24 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  <!-- Inline style for the price unit pill — keeps style.css unchanged -->
+  <style>
+    .card-price-unit {
+      display: inline-block;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+      background: rgba(37,99,235,0.1);
+      color: #2563eb;
+      border: 1px solid rgba(37,99,235,0.2);
+      margin-left: 0.35rem;
+      vertical-align: middle;
+    }
+  </style>
 </head>
 <body>
 
@@ -34,9 +52,7 @@
     </div>
 
     <button class="nav-hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
-      <span></span>
-      <span></span>
-      <span></span>
+      <span></span><span></span><span></span>
     </button>
   </nav>
 
@@ -77,7 +93,12 @@
           </div>
           <div class="card-body">
             <h3 class="card-name">{{ product.name }}</h3>
-            <div class="card-price">Rs. {{ '{:,.0f}'.format(product.price) }}</div>
+            <div class="card-price">
+              Rs. {{ '{:,.0f}'.format(product.price) }}
+              <span class="card-price-unit">
+                {% if product.price_unit == 'per_meter' %}/ m{% else %}/ pc{% endif %}
+              </span>
+            </div>
           </div>
         </a>
         {% else %}
@@ -106,7 +127,12 @@
           </div>
           <div class="card-body">
             <h3 class="card-name">{{ product.name }}</h3>
-            <div class="card-price">Rs. {{ '{:,.0f}'.format(product.price) }}</div>
+            <div class="card-price">
+              Rs. {{ '{:,.0f}'.format(product.price) }}
+              <span class="card-price-unit">
+                {% if product.price_unit == 'per_meter' %}/ m{% else %}/ pc{% endif %}
+              </span>
+            </div>
           </div>
         </a>
         {% else %}
@@ -135,7 +161,12 @@
           </div>
           <div class="card-body">
             <h3 class="card-name">{{ product.name }}</h3>
-            <div class="card-price">Rs. {{ '{:,.0f}'.format(product.price) }}</div>
+            <div class="card-price">
+              Rs. {{ '{:,.0f}'.format(product.price) }}
+              <span class="card-price-unit">
+                {% if product.price_unit == 'per_meter' %}/ m{% else %}/ pc{% endif %}
+              </span>
+            </div>
           </div>
         </a>
         {% else %}
@@ -164,7 +195,12 @@
           </div>
           <div class="card-body">
             <h3 class="card-name">{{ product.name }}</h3>
-            <div class="card-price">Rs. {{ '{:,.0f}'.format(product.price) }}</div>
+            <div class="card-price">
+              Rs. {{ '{:,.0f}'.format(product.price) }}
+              <span class="card-price-unit">
+                {% if product.price_unit == 'per_meter' %}/ m{% else %}/ pc{% endif %}
+              </span>
+            </div>
           </div>
         </a>
         {% else %}
@@ -185,27 +221,16 @@
       <div class="location-info">
         <h3>Dev Laxmi Suppliers</h3>
         <ul class="location-details">
-          <li>
-            <span>📍</span>
-            <span>Sallaghari, Bhaktapur</span>
-          </li>
-          <li>
-            <span>📞</span>
-            <span><a href="tel:+9779841334278" style="color: var(--primary);">+977-9841334278</a></span>
-          </li>
-          <li>
-            <span>🕐</span>
-            <span>Sun – Sat: 8:00 AM – 7:00 PM</span>
-          </li>
+          <li><span>📍</span><span>Sallaghari, Bhaktapur</span></li>
+          <li><span>📞</span><span><a href="tel:+9779841334278" style="color: var(--primary);">+977-9841334278</a></span></li>
+          <li><span>🕐</span><span>Sun – Sat: 8:00 AM – 7:00 PM</span></li>
         </ul>
         <a href="https://www.google.com/maps/search/Sallaghari+Bhaktapur+Dev+Laxmi+Suppliers" target="_blank" rel="noopener noreferrer" class="btn-primary" style="margin-top: 1rem;">Get Directions</a>
       </div>
       <div class="map-container">
         <iframe
           src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d220.84446979665458!2d85.41025634161669!3d27.6705811361518!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb1a9a4bc735d9%3A0xd37f8690858b968b!2sDev%20Laxmi%20Suppliers!5e0!3m2!1sen!2snp!4v1780728408455!5m2!1sen!2snp"
-          allowfullscreen=""
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
           title="Dev Laxmi Suppliers - Shop Location"
         ></iframe>
       </div>
@@ -219,9 +244,7 @@
         <div class="nav-brand" style="margin-bottom: 1.5rem;">
           <span class="nav-brand-title" style="color: var(--text-light);">Dev Laxmi Suppliers</span>
         </div>
-        <p style="opacity: 0.8; font-size: 0.9rem; max-width: 300px;">
-          Customer satisfaction is our priority.
-        </p>
+        <p style="opacity: 0.8; font-size: 0.9rem; max-width: 300px;">Customer satisfaction is our priority.</p>
       </div>
       <div class="footer-col">
         <h4>Links</h4>
@@ -236,14 +259,8 @@
       <div class="footer-col">
         <h4>Contact Us</h4>
         <ul>
-          <li style="display: flex; gap: 0.5rem; opacity: 0.8;">
-            <span>📍</span>
-            <span>Sallaghari, Bhaktapur</span>
-          </li>
-          <li style="display: flex; gap: 0.5rem; opacity: 0.8;">
-            <span>📞</span>
-            <span>+977-9841334278</span>
-          </li>
+          <li style="display: flex; gap: 0.5rem; opacity: 0.8;"><span>📍</span><span>Sallaghari, Bhaktapur</span></li>
+          <li style="display: flex; gap: 0.5rem; opacity: 0.8;"><span>📞</span><span>+977-9841334278</span></li>
         </ul>
       </div>
     </div>
@@ -255,9 +272,7 @@
   <a
     class="whatsapp-fab"
     href="https://wa.me/9779841334278?text=%E0%A4%A8%E0%A4%AE%E0%A4%B8%E0%A5%8D%E0%A4%A4%E0%A5%87%20Dev%20Laxmi%20Suppliers%2C%20%E0%A4%AE%E0%A4%B2%E0%A4%BE%E0%A4%88%20%E0%A4%A4%E0%A4%AA%E0%A4%BE%E0%A4%88%E0%A4%81%E0%A4%95%E0%A5%8B%20%E0%A4%AC%E0%A4%BF%E0%A4%95%E0%A5%8D%E0%A4%B0%E0%A5%80%E0%A4%95%E0%A5%8B%20%E0%A4%B8%E0%A4%BE%E0%A4%AE%E0%A4%BE%E0%A4%A8%20%E0%A4%AC%E0%A4%BE%E0%A4%B0%E0%A5%87%20%E0%A4%9A%E0%A4%BE%E0%A4%9F%20%E0%A4%97%E0%A4%B0%E0%A5%8D%E0%A4%A8%20%E0%A4%9A%E0%A4%BE%E0%A4%B9%E0%A4%A8%E0%A5%8D%E0%A4%9B%E0%A5%81."
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="Chat on WhatsApp"
+    target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp"
   >
     <span class="whatsapp-popup">
       <strong>Chat on WhatsApp</strong>
@@ -274,15 +289,12 @@
   <script>
     window.addEventListener('scroll', () => {
       const nav = document.getElementById('navbar');
-      if (window.scrollY > 50) {
-        nav.classList.add('scrolled');
-      } else {
-        nav.classList.remove('scrolled');
-      }
+      if (window.scrollY > 50) nav.classList.add('scrolled');
+      else nav.classList.remove('scrolled');
     });
 
     const hamburger = document.getElementById('hamburger');
-    const drawer = document.getElementById('nav-drawer');
+    const drawer    = document.getElementById('nav-drawer');
 
     hamburger.addEventListener('click', () => {
       const isOpen = drawer.classList.toggle('open');
