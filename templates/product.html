@@ -686,10 +686,15 @@
           <a href="{{ url_for('product_detail', product_id=reco.id) }}" class="reco-item" role="listitem" aria-label="{{ reco.name }}, Rs. {{ '{:,.0f}'.format(reco.price) }}">
             <div class="reco-item-thumb" aria-hidden="true">
               {% if reco.image_url %}
-              <img src="{{ reco.image_url }}" alt="{{ reco.name }}" onerror="this.parentElement.innerHTML='{% if reco.category == \"carpet\" %}🟫{% elif reco.category == \"doormat\" %}🚪{% elif reco.category == \"chair\" %}🪑{% elif reco.category == \"table\" %}🪵{% elif reco.category == \"hanger\" %}🧥{% else %}🔷{% endif %}';" />
-              {% else %}
-                {% if reco.category == 'carpet' %}🟫{% elif reco.category == 'doormat' %}🚪{% elif reco.category == 'chair' %}🪑{% elif reco.category == 'table' %}🪵{% elif reco.category == 'hanger' %}🧥{% else %}🔷{% endif %}
-              {% endif %}
+              <img src="{{ reco.image_url }}" alt="{{ reco.name }}" onerror="this.style.display='none';" />
+            {% else %}
+              {% if reco.category == 'carpet' %}🟫
+              {% elif reco.category == 'doormat' %}🚪
+              {% elif reco.category == 'chair' %}🪑
+              {% elif reco.category == 'table' %}🪵
+              {% elif reco.category == 'hanger' %}🧥
+              {% else %}🔷{% endif %}
+            {% endif %}
             </div>
             <div class="reco-item-info">
               <div class="reco-item-name">{{ reco.name }}</div>
