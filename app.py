@@ -62,6 +62,8 @@ ADMIN_PASSCODE = os.getenv("ADMIN_PASSCODE", "devlaxmi@admin2024")
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "static", "uploads")
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
+VALID_PRICE_UNITS = ("per_unit", "per_meter")
+
 
 def _ensure_upload_folder() -> None:
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -109,6 +111,8 @@ def init_database() -> None:
             brand        VARCHAR(100)   NOT NULL DEFAULT 'Unknown',
             description  TEXT           NOT NULL,
             price        NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+            price_unit   VARCHAR(10)    NOT NULL DEFAULT 'per_unit'
+                             CHECK (price_unit IN ('per_unit', 'per_meter')),
             image_url    VARCHAR(512)   NOT NULL DEFAULT '',
             style_tags   TEXT           NOT NULL DEFAULT '',
             created_at   TIMESTAMP      NOT NULL DEFAULT NOW(),
@@ -131,6 +135,22 @@ def init_database() -> None:
         $$
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand)")
+
+    # Add price_unit column if upgrading from an older schema
+    cur.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name='products' AND column_name='price_unit'
+            ) THEN
+                ALTER TABLE products
+                    ADD COLUMN price_unit VARCHAR(10) NOT NULL DEFAULT 'per_unit'
+                    CHECK (price_unit IN ('per_unit', 'per_meter'));
+            END IF;
+        END;
+        $$
+    """)
 
     # Trigger to keep updated_at current
     cur.execute("""
@@ -178,9 +198,9 @@ def init_database() -> None:
     if count == 0 and DEMO_PRODUCTS:
         log.info("Seeding %d demo products…", len(DEMO_PRODUCTS))
         sql = """
-            INSERT INTO products (name, category, brand, description, price, image_url, style_tags)
+            INSERT INTO products (name, category, brand, description, price, price_unit, image_url, style_tags)
             VALUES (%(name)s, %(category)s, %(brand)s, %(description)s,
-                    %(price)s, %(image_url)s, %(style_tags)s)
+                    %(price)s, %(price_unit)s, %(image_url)s, %(style_tags)s)
         """
         cur.executemany(sql, DEMO_PRODUCTS)
         log.info("Demo products seeded successfully.")
@@ -197,10 +217,6 @@ _reco_payload: dict | None = None
 
 
 def load_reco_model() -> dict | None:
-    """
-    Load the pickled TF-IDF similarity payload from disk.
-    Returns None if the pickle file does not exist yet (graceful fallback).
-    """
     global _reco_payload
     if _reco_payload is not None:
         return _reco_payload
@@ -226,16 +242,12 @@ def load_reco_model() -> dict | None:
 
 
 def reload_reco_model() -> None:
-    """Force re-load the pickle (call after training new model)."""
     global _reco_payload
     _reco_payload = None
     load_reco_model()
 
 
 def get_recommendations(product_id: int, product_category: str, top_n: int = 4) -> list[dict]:
-    """
-    Return up to `top_n` cross-category product recommendations for the given product.
-    """
     mapping = {
         "carpet":  "curtain",
         "curtain": "doormat",
@@ -274,7 +286,6 @@ def get_recommendations(product_id: int, product_category: str, top_n: int = 4) 
 
 
 def _fetch_products_by_ids(ids: list[int]) -> list[dict]:
-    """Fetch full product rows for a list of IDs, preserving order."""
     if not ids:
         return []
     query = "SELECT * FROM products WHERE id = ANY(%s)"
@@ -292,7 +303,6 @@ def _fetch_products_by_ids(ids: list[int]) -> list[dict]:
 
 
 def _fetch_random_products(category: str, limit: int, exclude_id: int = 0) -> list[dict]:
-    """Fetch random products of a given category, excluding a specific product ID."""
     query = "SELECT * FROM products WHERE category=%s AND id != %s ORDER BY RANDOM() LIMIT %s"
     conn = get_db()
     try:
@@ -307,10 +317,6 @@ def _fetch_random_products(category: str, limit: int, exclude_id: int = 0) -> li
 
 # ── Admin Auth Guard ──────────────────────────────────────────────────────────
 def admin_required(f):
-    """
-    Decorator that enforces admin authentication.
-    CRITICAL DECEPTION RULE: Any unauthorized access triggers abort(404).
-    """
     @functools.wraps(f)
     def decorated(*args, **kwargs):
         if not session.get("admin_authenticated"):
@@ -352,6 +358,7 @@ def home():
 
         for p in products:
             p["price"] = float(p["price"])
+            p.setdefault("price_unit", "per_unit")
 
         carpet_count  = sum(1 for p in products if p["category"] == "carpet")
         curtain_count = sum(1 for p in products if p["category"] == "curtain")
@@ -400,11 +407,13 @@ def product_detail(product_id: int):
         abort(404)
 
     product["price"] = float(product["price"])
+    product.setdefault("price_unit", "per_unit")
 
     try:
         recommendations = get_recommendations(product_id, product["category"])
         for r in recommendations:
             r["price"] = float(r["price"])
+            r.setdefault("price_unit", "per_unit")
     except Exception as e:
         log.error("Reco error for product %d: %s", product_id, e)
         recommendations = []
@@ -490,8 +499,10 @@ def admin_dashboard():
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        cur.execute("SELECT id, name, category, price FROM products ORDER BY created_at DESC")
+        cur.execute("SELECT id, name, category, price, price_unit FROM products ORDER BY created_at DESC")
         products = [dict(r) for r in cur.fetchall()]
+        for p in products:
+            p.setdefault("price_unit", "per_unit")
 
         cur.execute("""
             SELECT
@@ -567,6 +578,10 @@ def api_admin_create_product():
     description = str(data.get("description", "")).strip()
     style_tags  = str(data.get("style_tags", "")).strip()
     image_url   = str(data.get("image_url", "")).strip()
+    price_unit  = str(data.get("price_unit", "per_unit")).strip().lower()
+
+    if price_unit not in VALID_PRICE_UNITS:
+        price_unit = "per_unit"
 
     photo = request.files.get("photo")
     if photo and photo.filename:
@@ -596,10 +611,10 @@ def api_admin_create_product():
     try:
         cur = conn.cursor()
         cur.execute(
-            """INSERT INTO products (name, category, brand, description, price, image_url, style_tags)
-               VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """INSERT INTO products (name, category, brand, description, price, price_unit, image_url, style_tags)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                RETURNING id""",
-            (name, category, brand, description, price, image_url, style_tags),
+            (name, category, brand, description, price, price_unit, image_url, style_tags),
         )
         (new_id,) = cur.fetchone()
         conn.commit()
@@ -609,7 +624,7 @@ def api_admin_create_product():
 
     reload_reco_model()
 
-    log.info("Admin created new product #%d: '%s' (%s).", new_id, name, category)
+    log.info("Admin created new product #%d: '%s' (%s, %s).", new_id, name, category, price_unit)
     return jsonify({
         "success": True,
         "product_id": new_id,
