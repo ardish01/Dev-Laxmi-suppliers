@@ -117,7 +117,7 @@ def init_database() -> None:
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)")
 
-    # Add brand column if upgrading from an older schema — must run before the brand index
+    # Add brand column if upgrading from an older schema
     cur.execute("""
         DO $$
         BEGIN
@@ -132,7 +132,7 @@ def init_database() -> None:
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand)")
 
-    # Trigger to keep updated_at current (equivalent to ON UPDATE CURRENT_TIMESTAMP)
+    # Trigger to keep updated_at current
     cur.execute("""
         CREATE OR REPLACE FUNCTION set_updated_at()
         RETURNS TRIGGER LANGUAGE plpgsql AS $$
@@ -277,7 +277,6 @@ def _fetch_products_by_ids(ids: list[int]) -> list[dict]:
     """Fetch full product rows for a list of IDs, preserving order."""
     if not ids:
         return []
-    # psycopg2 can bind a tuple directly for ANY(ARRAY[...]) or use IN with a tuple
     query = "SELECT * FROM products WHERE id = ANY(%s)"
     conn = get_db()
     try:
@@ -401,9 +400,14 @@ def product_detail(product_id: int):
         abort(404)
 
     product["price"] = float(product["price"])
-    recommendations = get_recommendations(product_id, product["category"])
-    for r in recommendations:
-        r["price"] = float(r["price"])
+
+    try:
+        recommendations = get_recommendations(product_id, product["category"])
+        for r in recommendations:
+            r["price"] = float(r["price"])
+    except Exception as e:
+        log.error("Reco error for product %d: %s", product_id, e)
+        recommendations = []
 
     reco_category = "curtain" if product["category"] == "carpet" else "carpet"
     return render_template(
