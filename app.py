@@ -1,3 +1,6 @@
+Here is the complete, updated `app.py` file configured to run cleanly on Vercel without crashing on read-only file system checks:
+
+```python
 """
 app.py — Dev Laxmi Suppliers
 ==============================
@@ -15,6 +18,8 @@ import os
 import pickle
 import logging
 import functools
+import tempfile
+import re
 from datetime import datetime
 from werkzeug.utils import secure_filename
 
@@ -59,14 +64,23 @@ app.config.update(
 )
 
 ADMIN_PASSCODE = os.getenv("ADMIN_PASSCODE", "devlaxmi@admin2024")
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "static", "uploads")
-ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
+# Configure UPLOAD_FOLDER to use /tmp on Vercel or read-only environments
+if os.getenv("VERCEL"):
+    UPLOAD_FOLDER = os.path.join(tempfile.gettempdir(), "uploads")
+else:
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "static", "uploads")
+
+ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 VALID_PRICE_UNITS = ("per_unit", "per_meter")
 
 
 def _ensure_upload_folder() -> None:
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    """Safe creation of upload directory that won't crash on read-only file systems."""
+    try:
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    except OSError as err:
+        log.warning("Could not create upload directory '%s': %s", UPLOAD_FOLDER, err)
 
 
 def _allowed_image_filename(filename: str) -> bool:
@@ -93,7 +107,7 @@ def init_database() -> None:
     """
     Ensure tables and seed data exist.
     Called once at application startup.
-    The database itself is assumed to already exist (e.g. provisioned by Render).
+    The database itself is assumed to already exist (e.g. provisioned by Render/Neon/Supabase).
     """
     _ensure_upload_folder()
 
@@ -107,12 +121,12 @@ def init_database() -> None:
             id           SERIAL PRIMARY KEY,
             name         VARCHAR(255)   NOT NULL,
             category     VARCHAR(20)    NOT NULL
-                             CHECK (category IN ('carpet','curtain','doormat','chair','table','hanger')),
+                         CHECK (category IN ('carpet','curtain','doormat','chair','table','hanger')),
             brand        VARCHAR(100)   NOT NULL DEFAULT 'Unknown',
             description  TEXT           NOT NULL,
             price        NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
             price_unit   VARCHAR(10)    NOT NULL DEFAULT 'per_unit'
-                             CHECK (price_unit IN ('per_unit', 'per_meter')),
+                         CHECK (price_unit IN ('per_unit', 'per_meter')),
             image_url    VARCHAR(512)   NOT NULL DEFAULT '',
             style_tags   TEXT           NOT NULL DEFAULT '',
             created_at   TIMESTAMP      NOT NULL DEFAULT NOW(),
@@ -182,8 +196,8 @@ def init_database() -> None:
         CREATE TABLE IF NOT EXISTS inquiries (
             id           SERIAL PRIMARY KEY,
             product_id   INTEGER        NOT NULL
-                             REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,
-            client_name  VARCHAR(255)   NOT NULL,
+                         REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,
+            client_name VARCHAR(255)   NOT NULL,
             phone        VARCHAR(20)    NOT NULL,
             message      TEXT,
             created_at   TIMESTAMP      NOT NULL DEFAULT NOW()
@@ -447,7 +461,6 @@ def api_inquire():
     if len(client_name) > 255:
         return jsonify({"success": False, "error": "Name is too long."}), 400
 
-    import re
     if not re.match(r"^[\d\s\+\-\(\)]{7,20}$", phone):
         return jsonify({"success": False, "error": "Invalid phone number format."}), 400
 
@@ -592,8 +605,11 @@ def api_admin_create_product():
         stamp       = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
         stored_name = f"{stamp}_{safe_name}"
         photo_path  = os.path.join(UPLOAD_FOLDER, stored_name)
-        photo.save(photo_path)
-        image_url = url_for("static", filename=f"uploads/{stored_name}")
+        try:
+            photo.save(photo_path)
+            image_url = url_for("static", filename=f"uploads/{stored_name}")
+        except Exception as err:
+            log.error("Failed to save image locally: %s", err)
 
     try:
         price = float(data.get("price", 0))
@@ -701,3 +717,5 @@ if __name__ == "__main__":
         port=5000,
         debug=os.getenv("FLASK_DEBUG", "True").lower() == "true",
     )
+
+```
