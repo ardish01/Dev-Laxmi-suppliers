@@ -1,5 +1,13 @@
+# Web Framework & Server
 Flask
 gunicorn
-python-dotenv
+Flask-CORS
+
+# Database & Migration
 psycopg2-binary
+Flask-SQLAlchemy
+Flask-Migrate
+
+# Environment & Math
+python-dotenv
 numpy==2.0.0
