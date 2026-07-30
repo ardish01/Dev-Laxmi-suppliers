@@ -1,6 +1,3 @@
-Here is the complete, updated `app.py` file configured to run cleanly on Vercel without crashing on read-only file system checks:
-
-```python
 """
 app.py — Dev Laxmi Suppliers
 ==============================
