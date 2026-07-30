@@ -62,11 +62,14 @@ app.config.update(
 
 ADMIN_PASSCODE = os.getenv("ADMIN_PASSCODE", "devlaxmi@admin2024")
 
-# Configure UPLOAD_FOLDER to use /tmp on Vercel or read-only environments
-if os.getenv("VERCEL"):
-    UPLOAD_FOLDER = os.path.join(tempfile.gettempdir(), "uploads")
+# Configure UPLOAD_FOLDER to use /tmp on Vercel/read-only environments
+# Instead of relying on environment variables, we check if the app directory 
+# is writable. If it's read-only (like on Vercel), we fall back to the OS temp folder.
+_app_dir = os.path.dirname(os.path.abspath(__file__))
+if os.access(_app_dir, os.W_OK):
+    UPLOAD_FOLDER = os.path.join(_app_dir, "static", "uploads")
 else:
-    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "static", "uploads")
+    UPLOAD_FOLDER = os.path.join(tempfile.gettempdir(), "uploads")
 
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 VALID_PRICE_UNITS = ("per_unit", "per_meter")
@@ -76,7 +79,7 @@ def _ensure_upload_folder() -> None:
     """Safe creation of upload directory that won't crash on read-only file systems."""
     try:
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    except OSError as err:
+    except Exception as err:
         log.warning("Could not create upload directory '%s': %s", UPLOAD_FOLDER, err)
 
 
@@ -134,8 +137,7 @@ def init_database() -> None:
 
     # Add brand column if upgrading from an older schema
     cur.execute("""
-        DO $$
-        BEGIN
+        DO $$         BEGIN
             IF NOT EXISTS (
                 SELECT 1 FROM information_schema.columns
                 WHERE table_name='products' AND column_name='brand'
@@ -143,14 +145,12 @@ def init_database() -> None:
                 ALTER TABLE products ADD COLUMN brand VARCHAR(100) NOT NULL DEFAULT 'Unknown';
             END IF;
         END;
-        $$
-    """)
+        $$     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand)")
 
     # Add price_unit column if upgrading from an older schema
     cur.execute("""
-        DO $$
-        BEGIN
+        DO $$         BEGIN
             IF NOT EXISTS (
                 SELECT 1 FROM information_schema.columns
                 WHERE table_name='products' AND column_name='price_unit'
@@ -160,22 +160,18 @@ def init_database() -> None:
                     CHECK (price_unit IN ('per_unit', 'per_meter'));
             END IF;
         END;
-        $$
-    """)
+        $$     """)
 
     # Trigger to keep updated_at current
     cur.execute("""
         CREATE OR REPLACE FUNCTION set_updated_at()
-        RETURNS TRIGGER LANGUAGE plpgsql AS $$
-        BEGIN
+        RETURNS TRIGGER LANGUAGE plpgsql AS $$         BEGIN
             NEW.updated_at = NOW();
             RETURN NEW;
         END;
-        $$
-    """)
+        $$     """)
     cur.execute("""
-        DO $$
-        BEGIN
+        DO $$         BEGIN
             IF NOT EXISTS (
                 SELECT 1 FROM pg_trigger
                 WHERE tgname = 'trg_products_updated_at'
@@ -185,8 +181,7 @@ def init_database() -> None:
                 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
             END IF;
         END;
-        $$
-    """)
+        $$     """)
 
     # ── inquiries table ───────────────────────────────────────────────────────
     cur.execute("""
@@ -714,5 +709,3 @@ if __name__ == "__main__":
         port=5000,
         debug=os.getenv("FLASK_DEBUG", "True").lower() == "true",
     )
-
-```
