@@ -96,6 +96,7 @@ def get_db():
         dbname=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
+        sslmode='require'  # Required for Supabase
     )
 
 
@@ -691,11 +692,17 @@ def api_admin_get_inquiries():
 def create_app():
     """Initialize DB and load recommendation model before serving requests."""
     with app.app_context():
-        try:
-            init_database()
-        except Exception as exc:
-            log.critical("Database initialization failed: %s", exc)
-            raise
+        if os.getenv("DB_HOST"):
+            try:
+                init_database()
+            except Exception as exc:
+                # Log the error but don't crash the entire Vercel deployment.
+                # If the DB is truly down, specific routes will return 500, 
+                # but the app itself will stay alive.
+                log.critical("Database initialization failed: %s", exc)
+        else:
+            log.warning("DB_HOST not set. Skipping database initialization. Did you add Environment Variables in Vercel?")
+            
         load_reco_model()
     return app
 
